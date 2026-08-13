@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cube Stepper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #101114;
+    --panel: #1a1c21;
+    --panel-2: #22252c;
+    --line: #2d3038;
+    --text: #e8e6df;
+    --dim: #7c818d;
+    --accent: #ffd500;      /* sticker yellow — the OLL color */
+    --accent-ink: #171102;
+    --bad: #ff5a5a;
+    --radius: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Space Grotesk", system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  header {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    padding: 14px 20px 10px;
+    border-bottom: 1px solid var(--line);
+    flex-wrap: wrap;
+  }
+  header h1 {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  header h1 span { color: var(--accent); }
+  header .sub { color: var(--dim); font-size: 13px; }
+  header .spacer { flex: 1; }
+  .scheme {
+    display: flex; gap: 0; border: 1px solid var(--line); border-radius: 999px; overflow: hidden;
+  }
+  .scheme button {
+    background: transparent; border: 0; color: var(--dim);
+    font: 500 12px "Space Grotesk", sans-serif; padding: 5px 12px; cursor: pointer;
+  }
+  .scheme button.on { background: var(--panel-2); color: var(--text); }
+
+  main { flex: 1; display: flex; min-height: 0; }
+  #stage { flex: 1; position: relative; min-width: 0; }
+  #stage canvas { display: block; cursor: grab; touch-action: none; }
+  #stage canvas:active { cursor: grabbing; }
+  .hint {
+    position: absolute; left: 14px; bottom: 12px;
+    color: var(--dim); font-size: 12px; pointer-events: none;
+    opacity: .8;
+  }
+
+  aside {
+    width: 380px;
+    border-left: 1px solid var(--line);
+    background: var(--panel);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .block { padding: 16px 18px; border-bottom: 1px solid var(--line); }
+  label.eyebrow {
+    display: block; font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--dim); margin-bottom: 8px;
+  }
+  #alg-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    color: var(--text);
+    font: 600 15px/1.5 "JetBrains Mono", monospace;
+    padding: 10px 12px;
+    resize: vertical;
+    min-height: 58px;
+  }
+  #alg-input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+  .row { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+  .btn {
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    color: var(--text);
+    border-radius: var(--radius);
+    font: 500 13px "Space Grotesk", sans-serif;
+    padding: 8px 14px;
+    cursor: pointer;
+  }
+  .btn:hover { border-color: var(--dim); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
+  .btn:disabled { opacity: .4; cursor: default; }
+  #err { color: var(--bad); font: 400 12px "JetBrains Mono", monospace; margin-top: 8px; display: none; }
+
+  /* the move tape */
+  #tape-block { flex: 1; overflow: auto; }
+  #tape { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tok {
+    font: 600 17px "JetBrains Mono", monospace;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    color: var(--dim);
+    cursor: pointer;
+    user-select: none;
+    background: transparent;
+  }
+  .tok.done { color: var(--text); }
+  .tok.current {
+    color: var(--accent-ink);
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .tok:hover:not(.current) { border-color: var(--line); }
+  #tape-empty { color: var(--dim); font-size: 13px; }
+  #pos { color: var(--dim); font: 400 12px "JetBrains Mono", monospace; margin-top: 12px; }
+
+  /* transport */
+  #transport { display: flex; gap: 8px; align-items: center; }
+  #transport .btn { padding: 10px 0; flex: 1; text-align: center; font-size: 15px; }
+  #speed { margin-left: auto; }
+  select {
+    background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--line); border-radius: var(--radius);
+    font: 500 13px "Space Grotesk", sans-serif; padding: 8px 10px;
+  }
+  .kbd-hint { color: var(--dim); font-size: 11px; margin-top: 10px; }
+  .kbd-hint kbd {
+    font: 600 11px "JetBrains Mono", monospace;
+    background: var(--panel-2); border: 1px solid var(--line);
+    border-radius: 4px; padding: 1px 5px;
+  }
+
+  @media (max-width: 760px) {
+    body { overflow: auto; }
+    main { flex-direction: column; }
+    #stage { height: 46vh; flex: none; }
+    aside { width: 100%; border-left: 0; border-top: 1px solid var(--line); }
+    #tape-block { max-height: 30vh; }
+  }
+  @media (prefers-reduced-motion: reduce) { :root { --motion: 0; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Cube <span>Stepper</span></h1>
+  <div class="sub">type an algorithm, step through it move by move</div>
+  <div class="spacer"></div>
+  <div class="scheme" role="group" aria-label="Top color">
+    <button id="scheme-y" class="on">yellow top</button>
+    <button id="scheme-w">white top</button>
+  </div>
+</header>
+<main>
+  <div id="stage">
+    <div class="hint">drag to rotate the view</div>
+  </div>
+  <aside>
+    <div class="block">
+      <label class="eyebrow" for="alg-input">Algorithm</label>
+      <textarea id="alg-input" spellcheck="false">L U' L' B' U B L F' L F L2</textarea>
+      <div class="row">
+        <button class="btn primary" id="load">Load</button>
+        <button class="btn" id="invert">Invert</button>
+        <button class="btn" id="clear">Solved cube</button>
+      </div>
+      <div id="err"></div>
+    </div>
+    <div class="block">
+      <label class="eyebrow">Playback</label>
+      <div id="transport">
+        <button class="btn" id="to-start" title="Back to start">⏮</button>
+        <button class="btn" id="prev" title="Previous move (←)">◀</button>
+        <button class="btn primary" id="play" title="Play / pause (space)">▶ Play</button>
+        <button class="btn" id="next" title="Next move (→)">▶</button>
+        <button class="btn" id="to-end" title="Jump to end">⏭</button>
+      </div>
+      <div class="row">
+        <span style="color:var(--dim);font-size:12px;">Turn speed</span>
+        <select id="speed">
+          <option value="600">Slow</option>
+          <option value="320" selected>Normal</option>
+          <option value="140">Fast</option>
+        </select>
+      </div>
+      <div class="kbd-hint"><kbd>←</kbd> back &nbsp; <kbd>→</kbd> forward &nbsp; <kbd>space</kbd> play/pause &nbsp; click any move to jump there</div>
+    </div>
+    <div class="block" id="tape-block">
+      <label class="eyebrow">Moves</label>
+      <div id="tape"><span id="tape-empty">No algorithm loaded.</span></div>
+      <div id="pos"></div>
+    </div>
+  </aside>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+  // ---------- color schemes ----------
+  // face order matches cubie material index: +x, -x, +y, -y, +z, -z
+  const SCHEMES = {
+    yellow: { px: 0xff8c00, nx: 0xd0021b, py: 0xffd500, ny: 0xf5f5f0, pz: 0x00a651, nz: 0x0051ba },
+    white:  { px: 0xd0021b, nx: 0xff8c00, py: 0xf5f5f0, ny: 0xffd500, pz: 0x00a651, nz: 0x0051ba },
+  };
+  const PLASTIC = 0x0c0d10;
+  let scheme = 'yellow';
+
+  // ---------- move table ----------
+  // axis: rotation axis; layers: which coordinate slices move; q: quarter turns
+  // sign convention: q>0 rotates by -90° * q around the axis (clockwise seen from +axis)
+  const BASE = {
+    R: { axis: 'x', layers: [1],        q: 1 },
+    L: { axis: 'x', layers: [-1],       q: -1 },
+    U: { axis: 'y', layers: [1],        q: 1 },
+    D: { axis: 'y', layers: [-1],       q: -1 },
+    F: { axis: 'z', layers: [1],        q: 1 },
+    B: { axis: 'z', layers: [-1],       q: -1 },
+    M: { axis: 'x', layers: [0],        q: -1 },
+    E: { axis: 'y', layers: [0],        q: -1 },
+    S: { axis: 'z', layers: [0],        q: 1 },
+    x: { axis: 'x', layers: [-1, 0, 1], q: 1 },
+    y: { axis: 'y', layers: [-1, 0, 1], q: 1 },
+    z: { axis: 'z', layers: [-1, 0, 1], q: 1 },
+    r: { axis: 'x', layers: [0, 1],     q: 1 },
+    l: { axis: 'x', layers: [-1, 0],    q: -1 },
+    u: { axis: 'y', layers: [0, 1],     q: 1 },
+    d: { axis: 'y', layers: [-1, 0],    q: -1 },
+    f: { axis: 'z', layers: [0, 1],     q: 1 },
+    b: { axis: 'z', layers: [-1, 0],    q: -1 },
+  };
+
+  function parseAlg(text) {
+    const cleaned = text.replace(/[(),\[\]]/g, ' ').trim();
+    if (!cleaned) return { moves: [], error: null };
+    const tokens = cleaned.split(/\s+/);
+    const moves = [];
+    for (const raw of tokens) {
+      const m = raw.match(/^([RLUDFBMES]|[rludfbxyz]|[RLUDFB]w|[XYZ])(2)?(')?(2)?$/);
+      if (!m) return { moves: null, error: `Can't read "${raw}"` };
+      let face = m[1];
+      if (face.length === 2 && face[1] === 'w') face = face[0].toLowerCase(); // Rw -> r
+      if ('XYZ'.includes(face)) face = face.toLowerCase();
+      const base = BASE[face];
+      let q = base.q * (m[2] || m[4] ? 2 : 1);
+      if (m[3]) q = -q;
+      moves.push({ label: raw, axis: base.axis, layers: base.layers, q });
+    }
+    return { moves, error: null };
+  }
+
+  // ---------- three.js scene ----------
+  const stage = document.getElementById('stage');
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
+  camera.position.set(0, 0, 11.5);
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  stage.appendChild(renderer.domElement);
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.95));
+  const key = new THREE.DirectionalLight(0xffffff, 0.35);
+  key.position.set(4, 7, 6);
+  scene.add(key);
+
+  const holder = new THREE.Group();      // user orbit
+  holder.rotation.set(0.42, -0.55, 0);
+  scene.add(holder);
+  const cubeRoot = new THREE.Group();    // holds cubies
+  holder.add(cubeRoot);
+  const pivot = new THREE.Group();       // temporary rotation group
+  holder.add(pivot);
+
+  let cubies = [];
+
+  function buildCube() {
+    for (const c of cubies) cubeRoot.remove(c);
+    cubies = [];
+    const cols = SCHEMES[scheme];
+    const geo = new THREE.BoxGeometry(0.94, 0.94, 0.94);
+    for (let x = -1; x <= 1; x++)
+      for (let y = -1; y <= 1; y++)
+        for (let z = -1; z <= 1; z++) {
+          if (x === 0 && y === 0 && z === 0) continue;
+          const mats = [
+            faceMat(x === 1 ? cols.px : null),
+            faceMat(x === -1 ? cols.nx : null),
+            faceMat(y === 1 ? cols.py : null),
+            faceMat(y === -1 ? cols.ny : null),
+            faceMat(z === 1 ? cols.pz : null),
+            faceMat(z === -1 ? cols.nz : null),
+          ];
+          const cubie = new THREE.Mesh(geo, mats);
+          cubie.position.set(x, y, z);
+          cubeRoot.add(cubie);
+          cubies.push(cubie);
+        }
+  }
+  function faceMat(color) {
+    return new THREE.MeshLambertMaterial({ color: color === null ? PLASTIC : color });
+  }
+
+  function resize() {
+    const w = stage.clientWidth, h = stage.clientHeight;
+    renderer.setSize(w, h);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', resize);
+
+  // orbit by dragging
+  let dragging = false, lastX = 0, lastY = 0;
+  renderer.domElement.addEventListener('pointerdown', e => {
+    dragging = true; lastX = e.clientX; lastY = e.clientY;
+    renderer.domElement.setPointerCapture(e.pointerId);
+  });
+  renderer.domElement.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    holder.rotation.y += (e.clientX - lastX) * 0.008;
+    holder.rotation.x += (e.clientY - lastY) * 0.008;
+    holder.rotation.x = Math.max(-1.4, Math.min(1.4, holder.rotation.x));
+    lastX = e.clientX; lastY = e.clientY;
+  });
+  renderer.domElement.addEventListener('pointerup', () => dragging = false);
+
+  // ---------- move engine ----------
+  const AXIS_VEC = { x: new THREE.Vector3(1, 0, 0), y: new THREE.Vector3(0, 1, 0), z: new THREE.Vector3(0, 0, 1) };
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let anim = null; // {endTime, startTime, angle, done}
+
+  function selectCubies(move) {
+    return cubies.filter(c => move.layers.includes(Math.round(c.position[move.axis])));
+  }
+
+  function startMove(move, invert, duration, onDone) {
+    const angle = -(Math.PI / 2) * move.q * (invert ? -1 : 1);
+    const parts = selectCubies(move);
+    pivot.rotation.set(0, 0, 0);
+    pivot.updateMatrixWorld();
+    for (const c of parts) pivot.attach(c);
+    if (duration <= 0 || reducedMotion) {
+      pivot.rotation[move.axis] = angle;
+      bake(onDone);
+      return;
+    }
+    anim = { move, angle, start: performance.now(), duration, onDone };
+  }
+
+  function bake(onDone) {
+    pivot.updateMatrixWorld();
+    const parts = [...pivot.children];
+    for (const c of parts) {
+      cubeRoot.attach(c);
+      c.position.set(Math.round(c.position.x), Math.round(c.position.y), Math.round(c.position.z));
+      snapQuaternion(c);
+    }
+    pivot.rotation.set(0, 0, 0);
+    anim = null;
+    if (onDone) onDone();
+  }
+
+  function snapQuaternion(obj) {
+    const m = new THREE.Matrix4().makeRotationFromQuaternion(obj.quaternion);
+    const e = m.elements;
+    for (let i = 0; i < 16; i++) e[i] = Math.round(e[i]);
+    obj.quaternion.setFromRotationMatrix(m);
+  }
+
+  const easeInOut = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+  function tick(now) {
+    if (anim) {
+      const t = Math.min(1, (now - anim.start) / anim.duration);
+      pivot.rotation[anim.move.axis] = anim.angle * easeInOut(t);
+      if (t >= 1) bake(anim.onDone);
+    }
+    renderer.render(scene, camera);
+    requestAnimationFrame(tick);
+  }
+
+  // ---------- app state ----------
+  let moves = [];
+  let idx = 0;           // number of moves currently applied
+  let playing = false;
+  let busy = false;
+
+  const $ = id => document.getElementById(id);
+  const tape = $('tape'), err = $('err'), input = $('alg-input'), pos = $('pos');
+  const playBtn = $('play');
+
+  function renderTape() {
+    tape.innerHTML = '';
+    if (!moves.length) {
+      tape.innerHTML = '<span id="tape-empty">No algorithm loaded.</span>';
+      pos.textContent = '';
+      return;
+    }
+    moves.forEach((mv, i) => {
+      const b = document.createElement('button');
+      b.className = 'tok' + (i < idx ? ' done' : '') + (i === idx ? ' current' : '');
+      b.textContent = mv.label;
+      b.title = i === idx ? 'next move' : 'jump here';
+      b.addEventListener('click', () => jumpTo(i));
+      tape.appendChild(b);
+    });
+    pos.textContent = idx === moves.length
+      ? `done — ${moves.length}/${moves.length} moves applied`
+      : `${idx}/${moves.length} applied · next: ${moves[idx].label}`;
+  }
+
+  function speed() { return parseInt($('speed').value, 10); }
+
+  function stepForward(dur, onDone) {
+    if (busy || idx >= moves.length) { if (onDone) onDone(false); return; }
+    busy = true;
+    startMove(moves[idx], false, dur, () => {
+      idx++; busy = false; renderTape();
+      if (onDone) onDone(true);
+    });
+  }
+  function stepBack() {
+    if (busy || idx <= 0) return;
+    stopPlay();
+    busy = true;
+    startMove(moves[idx - 1], true, speed(), () => {
+      idx--; busy = false; renderTape();
+    });
+  }
+
+  function jumpTo(target) {
+    if (busy) return;
+    stopPlay();
+    // rebuild instantly to target state
+    buildCube();
+    for (let i = 0; i < target; i++) startMove(moves[i], false, 0);
+    idx = target;
+    renderTape();
+  }
+
+  function stopPlay() {
+    playing = false;
+    playBtn.textContent = '▶ Play';
+  }
+
+  function playLoop() {
+    if (!playing) return;
+    stepForward(speed(), ok => {
+      if (!ok || idx >= moves.length) { stopPlay(); renderTape(); return; }
+      setTimeout(playLoop, 60);
+    });
+  }
+
+  // ---------- wiring ----------
+  $('load').addEventListener('click', () => {
+    const { moves: parsed, error } = parseAlg(input.value);
+    if (error) { err.textContent = error + ' — expected moves like R U2 F\' M x Rw'; err.style.display = 'block'; return; }
+    err.style.display = 'none';
+    stopPlay();
+    moves = parsed; idx = 0;
+    buildCube();
+    renderTape();
+  });
+  $('invert').addEventListener('click', () => {
+    const { moves: parsed, error } = parseAlg(input.value);
+    if (error) { err.textContent = error; err.style.display = 'block'; return; }
+    err.style.display = 'none';
+    input.value = parsed.slice().reverse()
+      .map(m => m.label.endsWith("'") ? m.label.slice(0, -1)
+              : m.label.includes('2') ? m.label
+              : m.label + "'").join(' ');
+  });
+  $('clear').addEventListener('click', () => { stopPlay(); moves = []; idx = 0; buildCube(); renderTape(); });
+  $('next').addEventListener('click', () => { stopPlay(); stepForward(speed()); });
+  $('prev').addEventListener('click', stepBack);
+  $('to-start').addEventListener('click', () => jumpTo(0));
+  $('to-end').addEventListener('click', () => jumpTo(moves.length));
+  playBtn.addEventListener('click', () => {
+    if (playing) { stopPlay(); return; }
+    if (idx >= moves.length) jumpTo(0);
+    playing = true;
+    playBtn.textContent = '⏸ Pause';
+    playLoop();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.target === input) return;
+    if (e.key === 'ArrowRight') { e.preventDefault(); stopPlay(); stepForward(speed()); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); stepBack(); }
+    if (e.key === ' ') { e.preventDefault(); playBtn.click(); }
+  });
+  $('scheme-y').addEventListener('click', () => setScheme('yellow'));
+  $('scheme-w').addEventListener('click', () => setScheme('white'));
+  function setScheme(s) {
+    scheme = s;
+    $('scheme-y').classList.toggle('on', s === 'yellow');
+    $('scheme-w').classList.toggle('on', s === 'white');
+    jumpTo(idx); // rebuild with new colors, keep position
+  }
+
+  // ---------- boot ----------
+  buildCube();
+  resize();
+  renderTape();
+  requestAnimationFrame(tick);
+  $('load').click(); // load the default algorithm
+})();
+</script>
+</body>
+</html>
