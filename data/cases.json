@@ -1,0 +1,505 @@
+{
+  "version": 1,
+  "set": "oll",
+  "groups": [
+    { "id": "oriented-edges", "name": "Oriented Edges (OCLL)" },
+    { "id": "t-shapes", "name": "T-shapes" },
+    { "id": "squares", "name": "Squares" },
+    { "id": "solved-corners", "name": "Solved Corners" },
+    { "id": "lightning-bolts", "name": "Lightning Bolts" },
+    { "id": "p-shapes", "name": "P-shapes" },
+    { "id": "c-shapes", "name": "C-shapes" },
+    { "id": "fishes", "name": "Fishes" },
+    { "id": "l-shapes", "name": "L-shapes" },
+    { "id": "w-shapes", "name": "W-shapes" },
+    { "id": "lines", "name": "Lines" },
+    { "id": "knight-moves", "name": "Knight Moves" },
+    { "id": "awkward-shapes", "name": "Awkward Shapes" },
+    { "id": "dot-cases", "name": "Dot cases" }
+  ],
+  "cases": [
+    {
+      "id": "sune",
+      "name": "Sune",
+      "group": "oriented-edges",
+      "primary": "R U R' U R U2' R'",
+      "secondary": "y' R' U2' R U R' U R",
+      "triggers": "Dopest alg of them all",
+      "notes": "",
+      "easy": false
+    },
+    {
+      "id": "cross",
+      "name": "Cross",
+      "group": "oriented-edges",
+      "primary": "(R U2 R') (U' R U R') (U' R U' R')",
+      "secondary": "y (R U R' U) (R U' R' U) (R U2' R')",
+      "notes": "Begins and ends the same as (anti-)sune",
+      "easy": false
+    },
+    {
+      "id": "chameleon",
+      "name": "Chameleon",
+      "group": "oriented-edges",
+      "primary": "(r U R' U') (r' F R F')",
+      "notes": "Sexy-move followed by sledge-hammer starting with r's instad of R's",
+      "easy": false
+    },
+    {
+      "id": "headlights",
+      "name": "Headlights",
+      "group": "oriented-edges",
+      "primary": "R2 D (R' U2 R) D' (R' U2 R')",
+      "secondary": "y2 R2' D' (R U2 R') D (R U2 R)",
+      "notes": "Try to push the D' with ringfinger. Probably hardest of this group",
+      "easy": false
+    },
+    {
+      "id": "bruno",
+      "name": "Bruno",
+      "group": "oriented-edges",
+      "primary": "R U2' R2' U' R2 U' R2' U2' R",
+      "notes": "Never release the R face! and do the U-moves with left hand",
+      "easy": false
+    },
+    {
+      "id": "anti-sune",
+      "name": "Anti-Sune",
+      "group": "oriented-edges",
+      "primary": "R U2 R' U' R U' R'",
+      "secondary": "y' R' U' R U' R' U2 R",
+      "notes": "Inverse of the dopest alg of them all",
+      "easy": false
+    },
+    {
+      "id": "bowtie",
+      "name": "Bowtie",
+      "group": "oriented-edges",
+      "primary": "F' (r U R' U') r' F R",
+      "notes": "Same as Chameleon with the last F' in front",
+      "easy": false
+    },
+    {
+      "id": "t",
+      "name": "T",
+      "group": "t-shapes",
+      "primary": "F (R U R' U') F'",
+      "triggers": "F (sexy) F'",
+      "notes": "easy right?",
+      "easy": true
+    },
+    {
+      "id": "key",
+      "name": "Key",
+      "group": "t-shapes",
+      "primary": "(R U R' U') (R' F R F')",
+      "triggers": "(sexy) (sledge)",
+      "notes": "I'll take it",
+      "easy": true
+    },
+    {
+      "id": "righty-square",
+      "name": "Righty-Square",
+      "group": "squares",
+      "primary": "r U2 R' U' R U' r'",
+      "notes": "Anti-Sune beginning and ending with wide moves",
+      "easy": false
+    },
+    {
+      "id": "lefty-square",
+      "name": "Lefty-Square",
+      "group": "squares",
+      "primary": "r' U2' R U R' U r",
+      "notes": "Mirror of Righty-Square",
+      "easy": false
+    },
+    {
+      "id": "arrow",
+      "name": "Arrow",
+      "group": "solved-corners",
+      "primary": "(r U R' U') M (U R U' R')",
+      "triggers": "(wide sexy) M (insert)",
+      "easy": false
+    },
+    {
+      "id": "h",
+      "name": "H",
+      "group": "solved-corners",
+      "primary": "(R U R' U') M' (U R U' r')",
+      "triggers": "(sexy) M' (wide insert)",
+      "easy": false
+    },
+    {
+      "id": "lightning",
+      "name": "Lightning",
+      "group": "lightning-bolts",
+      "primary": "r U R' U R U2' r'",
+      "notes": "Wide Sune, easy right?",
+      "easy": false
+    },
+    {
+      "id": "reverse-lightning",
+      "name": "Reverse Lightning",
+      "group": "lightning-bolts",
+      "primary": "r' U' R U' R' U2 r",
+      "secondary": "y2 l' U' L U' L' U2 l",
+      "notes": "Mirror of Lightning",
+      "easy": false
+    },
+    {
+      "id": "downstairs",
+      "name": "Downstairs",
+      "group": "lightning-bolts",
+      "primary": "r' (R2 U R' U R U2 R') U M'",
+      "triggers": "M (Sune) U M'",
+      "easy": false
+    },
+    {
+      "id": "upstairs",
+      "name": "Upstairs",
+      "group": "lightning-bolts",
+      "primary": "M' (R' U' R U' R' U2 R) U' M",
+      "triggers": "M' (Sune-mirror) U' M",
+      "easy": false
+    },
+    {
+      "id": "big-lightning",
+      "name": "Big Lightning",
+      "group": "lightning-bolts",
+      "primary": "R' F (R U R' U') F' U R",
+      "triggers": "R' F (Sexy) F' U R",
+      "easy": true
+    },
+    {
+      "id": "lefty-big-lightning",
+      "name": "Lefty Big Lightning",
+      "group": "lightning-bolts",
+      "primary": "L F' (L' U' L U) F U' L'",
+      "secondary": "y2 (R U R') (F' U' F) (U R U2 R')",
+      "notes": "Mirror of Big Lightning",
+      "easy": false
+    },
+    {
+      "id": "p",
+      "name": "P",
+      "group": "p-shapes",
+      "primary": "f (R U R' U') f'",
+      "secondary": "y2 F (U R U' R') F'",
+      "triggers": "f (sexy) f' , F (inverse-sexy) F'",
+      "easy": true
+    },
+    {
+      "id": "couch",
+      "name": "Couch",
+      "group": "p-shapes",
+      "primary": "R' U' F (U R U' R') F' R",
+      "notes": "Inverse of Big Lightning",
+      "easy": false
+    },
+    {
+      "id": "inverse-p",
+      "name": "Inverse P",
+      "group": "p-shapes",
+      "primary": "f' (L' U' L U) f",
+      "secondary": "y R' U' F' U F R",
+      "notes": "Mirror of P, second alg if you hate L moves",
+      "easy": false
+    },
+    {
+      "id": "anti-couch",
+      "name": "Anti-Couch",
+      "group": "p-shapes",
+      "primary": "R U B' (U' R' U) R B R'",
+      "secondary": "S (R U R' U') (R' F R f')",
+      "notes": "Look up fingertrick, it's pretty dope",
+      "easy": false
+    },
+    {
+      "id": "seein-headlights",
+      "name": "Seein' Headlights",
+      "group": "c-shapes",
+      "primary": "R' U' (R' F R F') U R",
+      "notes": "C and Headlights",
+      "easy": true
+    },
+    {
+      "id": "city",
+      "name": "City",
+      "group": "c-shapes",
+      "primary": "(R U R' U') B' (R' F R F') B",
+      "secondary": "(R U R2' U') (R' F R U) R U' F'",
+      "notes": "C and T",
+      "easy": false
+    },
+    {
+      "id": "mounted-fish",
+      "name": "Mounted Fish",
+      "group": "fishes",
+      "primary": "F (R U' R' U') (R U R' F')",
+      "notes": "One of the fastest",
+      "easy": true
+    },
+    {
+      "id": "fish-salad",
+      "name": "Fish Salad",
+      "group": "fishes",
+      "primary": "(R U2') (R2' F R F') (R U2' R')",
+      "triggers": "(R U2' R') (sledge) (R U2' R')",
+      "easy": false
+    },
+    {
+      "id": "anti-kite",
+      "name": "Anti-Kite",
+      "group": "fishes",
+      "primary": "(R U R' U) (R' F R F') (R U2' R')",
+      "triggers": "(Su)(sledge)(ne)",
+      "easy": false
+    },
+    {
+      "id": "kite",
+      "name": "Kite",
+      "group": "fishes",
+      "primary": "(R U R' U') R' F (R2 U R' U') F'",
+      "notes": "Starts as a T-perm",
+      "easy": false
+    },
+    {
+      "id": "breakneck",
+      "name": "Breakneck",
+      "group": "l-shapes",
+      "primary": "F (R U R' U') (R U R' U') F'",
+      "triggers": "F (double Sexy) F'",
+      "easy": true
+    },
+    {
+      "id": "anti-breakneck",
+      "name": "Anti-Breakneck",
+      "group": "l-shapes",
+      "primary": "R' U' (R' F R F') (R' F R F') U R",
+      "secondary": "F' (L' U' L U) (L' U' L U) F",
+      "triggers": "#1: R' U' (double Sledge) U R #2: for lefties",
+      "easy": false
+    },
+    {
+      "id": "anti-frying-pan",
+      "name": "Anti-Frying Pan",
+      "group": "l-shapes",
+      "primary": "(r U R' U) (R U' R' U) R U2' r'",
+      "notes": "Mirror",
+      "easy": false
+    },
+    {
+      "id": "frying-pan",
+      "name": "Frying Pan",
+      "group": "l-shapes",
+      "primary": "(r' U' R U') (R' U R U') R' U2 r",
+      "notes": "fat double Anti-Sune",
+      "easy": false
+    },
+    {
+      "id": "back-squeezy",
+      "name": "Back Squeezy",
+      "group": "l-shapes",
+      "primary": "r U' r2' U r2 U r2' U' r",
+      "notes": "Mirror of Front Squeezy",
+      "easy": false
+    },
+    {
+      "id": "front-squeezy",
+      "name": "Front Squeezy",
+      "group": "l-shapes",
+      "primary": "r' U r2 U' r2' U' r2 U r'",
+      "notes": "Never release r!",
+      "easy": false
+    },
+    {
+      "id": "mario",
+      "name": "Mario",
+      "group": "w-shapes",
+      "primary": "(R U R' U) (R U' R' U') (R' F R F')",
+      "notes": "Sune with sledge insert",
+      "easy": false
+    },
+    {
+      "id": "wario",
+      "name": "Wario",
+      "group": "w-shapes",
+      "primary": "(R' U' R U') (R' U R U) l U' R' U x",
+      "secondary": "y2 L' U' L U' L' U L U L F' L' F",
+      "notes": "#1: Mirror of Mario #2: Lefty",
+      "easy": false
+    },
+    {
+      "id": "ant",
+      "name": "Ant",
+      "group": "lines",
+      "primary": "f (R U R' U') (R U R' U') f'",
+      "secondary": "y2 F (U R U' R') (U R U' R') F'",
+      "triggers": "f 2(sexy) f' , F 2(inverse-sexy) F'",
+      "easy": true
+    },
+    {
+      "id": "streetlights",
+      "name": "Streetlights",
+      "group": "lines",
+      "primary": "r U r' (U R U' R') (U R U' R') r U' r'",
+      "secondary": "r' U' r (U' R' U R) (U' R' U R) r' U r",
+      "notes": "#1: long but fast #2: Mirror",
+      "easy": false
+    },
+    {
+      "id": "highway",
+      "name": "Highway",
+      "group": "lines",
+      "primary": "R U2 R2 (U' R U' R') U2 F R F'",
+      "secondary": "y (R' F R U) (R U' R2' F') R2 U' R' (U R U R')",
+      "notes": "#1: shorter but shittier #2: longer but fingertrickable",
+      "easy": false
+    },
+    {
+      "id": "rice-cooker",
+      "name": "Rice Cooker",
+      "group": "lines",
+      "primary": "(R U R' U R U') y (R U' R') F'",
+      "secondary": "(R' U' R U' R' U) y' (R' U R) B",
+      "notes": "Starts like Sune with different insert",
+      "easy": false
+    },
+    {
+      "id": "anti-squeegee",
+      "name": "Anti-Squeegee",
+      "group": "knight-moves",
+      "primary": "(r U r') (R U R' U') (r U' r')",
+      "notes": "Mirror of Squeegeeeee",
+      "easy": false
+    },
+    {
+      "id": "squeegee",
+      "name": "Squeegee",
+      "group": "knight-moves",
+      "primary": "(r' U' r) (R' U' R U) (r' U r)",
+      "secondary": "y2 l' U' l (L' U' L U) l' U l",
+      "notes": "Second one for lefty-lovers, or if you want to know both angles",
+      "easy": false
+    },
+    {
+      "id": "anti-gun",
+      "name": "Anti-Gun",
+      "group": "knight-moves",
+      "primary": "(R' F R) (U R' F' R) (F U' F')",
+      "secondary": "(r' U r) (U r' U' r) y (R U' R')",
+      "notes": "You might want to look up some fingertricks for this one",
+      "easy": false
+    },
+    {
+      "id": "gun",
+      "name": "Gun",
+      "group": "knight-moves",
+      "primary": "F U R U' R2' F' R U (R U' R')",
+      "secondary": "(r U' r') (U' r U r') (F' U F)",
+      "notes": "I would say both algs are equally good",
+      "easy": false
+    },
+    {
+      "id": "poodle",
+      "name": "Poodle",
+      "group": "awkward-shapes",
+      "primary": "(R U R' U R U2' R') F (R U R' U') F'",
+      "triggers": "(sune) + (T-case), long but fast!",
+      "easy": false
+    },
+    {
+      "id": "wtf",
+      "name": "WTF",
+      "group": "awkward-shapes",
+      "primary": "r2 D' (r U r') D r2 (U' r' U' r)",
+      "secondary": "y (R U R' U') (R U' R') (F' U' F) (R U R')",
+      "notes": "#1: verry fast if you nail the D-move #2: If you suck at D moves",
+      "easy": false
+    },
+    {
+      "id": "anti-wtf",
+      "name": "Anti-WTF",
+      "group": "awkward-shapes",
+      "primary": "F U (R U2 R' U') (R U2 R' U') F'",
+      "notes": "Do the first U with a lefty index push",
+      "easy": false
+    },
+    {
+      "id": "anti-poodle",
+      "name": "Anti-Poodle",
+      "group": "awkward-shapes",
+      "primary": "(R' U' R U' R' U2 R) F (R U R' U') F'",
+      "triggers": "(Anti-Sune) + (T)",
+      "easy": false
+    },
+    {
+      "id": "blank",
+      "name": "Blank",
+      "group": "dot-cases",
+      "primary": "(R U2') (R2' F R F') U2' (R' F R F')",
+      "triggers": "(R U2' R') (Sledge) U2' (SLedge)",
+      "easy": false
+    },
+    {
+      "id": "zamboni",
+      "name": "Zamboni",
+      "group": "dot-cases",
+      "primary": "F (R U R' U') F' f (R U R' U') f'",
+      "secondary": "y (r U r') U2 R U2' R' U2 (r U' r')",
+      "triggers": "F (Sexy) F' f (Sexy) f'",
+      "easy": false
+    },
+    {
+      "id": "slash",
+      "name": "Slash",
+      "group": "dot-cases",
+      "primary": "(R U R' U) (R' F R F') U2' (R' F R F')",
+      "triggers": "(R U R' U) (sledge) U2' (sledge)",
+      "easy": false
+    },
+    {
+      "id": "bunny",
+      "name": "Bunny",
+      "group": "dot-cases",
+      "primary": "M U (R U R' U') M' (R' F R F')",
+      "triggers": "M U (sexy) M' (sledge)",
+      "easy": false
+    },
+    {
+      "id": "anti-nazi",
+      "name": "Anti-Nazi",
+      "group": "dot-cases",
+      "primary": "f (R U R' U') f' U' F (R U R' U') F'",
+      "triggers": "f (sexy) f' U' (T)",
+      "easy": false
+    },
+    {
+      "id": "x-aka-super-lip",
+      "name": "X, aka Super lip",
+      "group": "dot-cases",
+      "primary": "M U (R U R' U') M2' (U R U' r')",
+      "triggers": "M U (sexy) M2' (fat insert)",
+      "notes": "second alg",
+      "easy": false
+    },
+    {
+      "id": "crown",
+      "name": "Crown",
+      "group": "dot-cases",
+      "primary": "(r U R' U R U2 r') (r' U' R U' R' U2 r)",
+      "secondary": "y R U2' (R2' F R F') U2' M' (U R U' r')",
+      "triggers": "(Righty-Square) (Lefty-Square)",
+      "easy": false
+    },
+    {
+      "id": "nazi",
+      "name": "Nazi",
+      "group": "dot-cases",
+      "primary": "f (R U R' U') f' U F (R U R' U') F'",
+      "triggers": "f (Sexy) f' U (T)",
+      "notes": "second alg",
+      "easy": false
+    }
+  ]
+}
