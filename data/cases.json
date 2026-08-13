@@ -2,20 +2,62 @@
   "version": 1,
   "set": "oll",
   "groups": [
-    { "id": "oriented-edges", "name": "Oriented Edges (OCLL)" },
-    { "id": "t-shapes", "name": "T-shapes" },
-    { "id": "squares", "name": "Squares" },
-    { "id": "solved-corners", "name": "Solved Corners" },
-    { "id": "lightning-bolts", "name": "Lightning Bolts" },
-    { "id": "p-shapes", "name": "P-shapes" },
-    { "id": "c-shapes", "name": "C-shapes" },
-    { "id": "fishes", "name": "Fishes" },
-    { "id": "l-shapes", "name": "L-shapes" },
-    { "id": "w-shapes", "name": "W-shapes" },
-    { "id": "lines", "name": "Lines" },
-    { "id": "knight-moves", "name": "Knight Moves" },
-    { "id": "awkward-shapes", "name": "Awkward Shapes" },
-    { "id": "dot-cases", "name": "Dot cases" }
+    {
+      "id": "oriented-edges",
+      "name": "Oriented Edges (OCLL)"
+    },
+    {
+      "id": "t-shapes",
+      "name": "T-shapes"
+    },
+    {
+      "id": "squares",
+      "name": "Squares"
+    },
+    {
+      "id": "solved-corners",
+      "name": "Solved Corners"
+    },
+    {
+      "id": "lightning-bolts",
+      "name": "Lightning Bolts"
+    },
+    {
+      "id": "p-shapes",
+      "name": "P-shapes"
+    },
+    {
+      "id": "c-shapes",
+      "name": "C-shapes"
+    },
+    {
+      "id": "fishes",
+      "name": "Fishes"
+    },
+    {
+      "id": "l-shapes",
+      "name": "L-shapes"
+    },
+    {
+      "id": "w-shapes",
+      "name": "W-shapes"
+    },
+    {
+      "id": "lines",
+      "name": "Lines"
+    },
+    {
+      "id": "knight-moves",
+      "name": "Knight Moves"
+    },
+    {
+      "id": "awkward-shapes",
+      "name": "Awkward Shapes"
+    },
+    {
+      "id": "dot-cases",
+      "name": "Dot cases"
+    }
   ],
   "cases": [
     {
@@ -26,7 +68,9 @@
       "secondary": "y' R' U2' R U R' U R",
       "triggers": "Dopest alg of them all",
       "notes": "",
-      "easy": false
+      "easy": false,
+      "pattern": "010111110001001001000",
+      "oll": 27
     },
     {
       "id": "cross",
@@ -35,7 +79,9 @@
       "primary": "(R U2 R') (U' R U R') (U' R U' R')",
       "secondary": "y (R U R' U) (R U' R' U) (R U2' R')",
       "notes": "Begins and ends the same as (anti-)sune",
-      "easy": false
+      "easy": false,
+      "pattern": "010111010101000101000",
+      "oll": 21
     },
     {
       "id": "chameleon",
@@ -43,7 +89,9 @@
       "group": "oriented-edges",
       "primary": "(r U R' U') (r' F R F')",
       "notes": "Sexy-move followed by sledge-hammer starting with r's instad of R's",
-      "easy": false
+      "easy": false,
+      "pattern": "011111011100000001000",
+      "oll": 24
     },
     {
       "id": "headlights",
@@ -52,7 +100,9 @@
       "primary": "R2 D (R' U2 R) D' (R' U2 R')",
       "secondary": "y2 R2' D' (R U2 R') D (R U2 R)",
       "notes": "Try to push the D' with ringfinger. Probably hardest of this group",
-      "easy": false
+      "easy": false,
+      "pattern": "111111010101000000000",
+      "oll": 23
     },
     {
       "id": "bruno",
@@ -60,7 +110,9 @@
       "group": "oriented-edges",
       "primary": "R U2' R2' U' R2 U' R2' U2' R",
       "notes": "Never release the R face! and do the U-moves with left hand",
-      "easy": false
+      "easy": false,
+      "pattern": "010111010001000100101",
+      "oll": 22
     },
     {
       "id": "anti-sune",
@@ -69,7 +121,9 @@
       "primary": "R U2 R' U' R U' R'",
       "secondary": "y' R' U' R U' R' U2 R",
       "notes": "Inverse of the dopest alg of them all",
-      "easy": false
+      "easy": false,
+      "pattern": "011111010100100000100",
+      "oll": 26
     },
     {
       "id": "bowtie",
@@ -77,7 +131,9 @@
       "group": "oriented-edges",
       "primary": "F' (r U R' U') r' F R",
       "notes": "Same as Chameleon with the last F' in front",
-      "easy": false
+      "easy": false,
+      "pattern": "011111110001000000100",
+      "oll": 25
     },
     {
       "id": "t",
@@ -86,7 +142,9 @@
       "primary": "F (R U R' U') F'",
       "triggers": "F (sexy) F'",
       "notes": "easy right?",
-      "easy": true
+      "easy": true,
+      "pattern": "001111001010000010101",
+      "oll": 45
     },
     {
       "id": "key",
@@ -95,7 +153,9 @@
       "primary": "(R U R' U') (R' F R F')",
       "triggers": "(sexy) (sledge)",
       "notes": "I'll take it",
-      "easy": true
+      "easy": true,
+      "pattern": "001111001110000011000",
+      "oll": 33
     },
     {
       "id": "righty-square",
@@ -103,7 +163,9 @@
       "group": "squares",
       "primary": "r U2 R' U' R U' r'",
       "notes": "Anti-Sune beginning and ending with wide moves",
-      "easy": false
+      "easy": false,
+      "pattern": "011011000110100000110",
+      "oll": 6
     },
     {
       "id": "lefty-square",
@@ -111,7 +173,9 @@
       "group": "squares",
       "primary": "r' U2' R U R' U r",
       "notes": "Mirror of Righty-Square",
-      "easy": false
+      "easy": false,
+      "pattern": "000011011000001011011",
+      "oll": 5
     },
     {
       "id": "arrow",
@@ -119,7 +183,9 @@
       "group": "solved-corners",
       "primary": "(r U R' U') M (U R U' R')",
       "triggers": "(wide sexy) M (insert)",
-      "easy": false
+      "easy": false,
+      "pattern": "111110101010010000000",
+      "oll": 28
     },
     {
       "id": "h",
@@ -127,7 +193,9 @@
       "group": "solved-corners",
       "primary": "(R U R' U') M' (U R U' r')",
       "triggers": "(sexy) M' (wide insert)",
-      "easy": false
+      "easy": false,
+      "pattern": "101111101010000010000",
+      "oll": 57
     },
     {
       "id": "lightning",
@@ -135,7 +203,9 @@
       "group": "lightning-bolts",
       "primary": "r U R' U R U2' r'",
       "notes": "Wide Sune, easy right?",
-      "easy": false
+      "easy": false,
+      "pattern": "010110100011011001000",
+      "oll": 7
     },
     {
       "id": "reverse-lightning",
@@ -144,7 +214,9 @@
       "primary": "r' U' R U' R' U2 r",
       "secondary": "y2 l' U' L U' L' U2 l",
       "notes": "Mirror of Lightning",
-      "easy": false
+      "easy": false,
+      "pattern": "100110010100110110000",
+      "oll": 8
     },
     {
       "id": "downstairs",
@@ -152,7 +224,9 @@
       "group": "lightning-bolts",
       "primary": "r' (R2 U R' U R U2 R') U M'",
       "triggers": "M (Sune) U M'",
-      "easy": false
+      "easy": false,
+      "pattern": "000011110001001011010",
+      "oll": 11
     },
     {
       "id": "upstairs",
@@ -160,7 +234,9 @@
       "group": "lightning-bolts",
       "primary": "M' (R' U' R U' R' U2 R) U' M",
       "triggers": "M' (Sune-mirror) U' M",
-      "easy": false
+      "easy": false,
+      "pattern": "110011000110100100010",
+      "oll": 12
     },
     {
       "id": "big-lightning",
@@ -168,7 +244,9 @@
       "group": "lightning-bolts",
       "primary": "R' F (R U R' U') F' U R",
       "triggers": "R' F (Sexy) F' U R",
-      "easy": true
+      "easy": true,
+      "pattern": "100111001010000110001",
+      "oll": 40
     },
     {
       "id": "lefty-big-lightning",
@@ -177,7 +255,9 @@
       "primary": "L F' (L' U' L U) F U' L'",
       "secondary": "y2 (R U R') (F' U' F) (U R U2 R')",
       "notes": "Mirror of Big Lightning",
-      "easy": false
+      "easy": false,
+      "pattern": "001111100010100011000",
+      "oll": 39
     },
     {
       "id": "p",
@@ -186,7 +266,9 @@
       "primary": "f (R U R' U') f'",
       "secondary": "y2 F (U R U' R') F'",
       "triggers": "f (sexy) f' , F (inverse-sexy) F'",
-      "easy": true
+      "easy": true,
+      "pattern": "001011011000000010111",
+      "oll": 44
     },
     {
       "id": "couch",
@@ -194,7 +276,9 @@
       "group": "p-shapes",
       "primary": "R' U' F (U R U' R') F' R",
       "notes": "Inverse of Big Lightning",
-      "easy": false
+      "easy": false,
+      "pattern": "011011001110000001010",
+      "oll": 31
     },
     {
       "id": "inverse-p",
@@ -203,7 +287,9 @@
       "primary": "f' (L' U' L U) f",
       "secondary": "y R' U' F' U F R",
       "notes": "Mirror of P, second alg if you hate L moves",
-      "easy": false
+      "easy": false,
+      "pattern": "100110110000111010000",
+      "oll": 43
     },
     {
       "id": "anti-couch",
@@ -212,7 +298,9 @@
       "primary": "R U B' (U' R' U) R B R'",
       "secondary": "S (R U R' U') (R' F R f')",
       "notes": "Look up fingertrick, it's pretty dope",
-      "easy": false
+      "easy": false,
+      "pattern": "001011011100000011010",
+      "oll": 32
     },
     {
       "id": "seein-headlights",
@@ -220,7 +308,9 @@
       "group": "c-shapes",
       "primary": "R' U' (R' F R F') U R",
       "notes": "C and Headlights",
-      "easy": true
+      "easy": true,
+      "pattern": "110010110000111000010",
+      "oll": 46
     },
     {
       "id": "city",
@@ -229,7 +319,9 @@
       "primary": "(R U R' U') B' (R' F R F') B",
       "secondary": "(R U R2' U') (R' F R U) R U' F'",
       "notes": "C and T",
-      "easy": false
+      "easy": false,
+      "pattern": "000111101010001010100",
+      "oll": 34
     },
     {
       "id": "mounted-fish",
@@ -237,7 +329,9 @@
       "group": "fishes",
       "primary": "F (R U' R' U') (R U R' F')",
       "notes": "One of the fastest",
-      "easy": true
+      "easy": true,
+      "pattern": "110110001110011000000",
+      "oll": 37
     },
     {
       "id": "fish-salad",
@@ -245,7 +339,9 @@
       "group": "fishes",
       "primary": "(R U2') (R2' F R F') (R U2' R')",
       "triggers": "(R U2' R') (sledge) (R U2' R')",
-      "easy": false
+      "easy": false,
+      "pattern": "100011011100001010010",
+      "oll": 35
     },
     {
       "id": "anti-kite",
@@ -253,7 +349,9 @@
       "group": "fishes",
       "primary": "(R U R' U) (R' F R F') (R U2' R')",
       "triggers": "(Su)(sledge)(ne)",
-      "easy": false
+      "easy": false,
+      "pattern": "001110010001010011001",
+      "oll": 10
     },
     {
       "id": "kite",
@@ -261,7 +359,9 @@
       "group": "fishes",
       "primary": "(R U R' U') R' F (R2 U R' U') F'",
       "notes": "Starts as a T-perm",
-      "easy": false
+      "easy": false,
+      "pattern": "010110001110010100100",
+      "oll": 9
     },
     {
       "id": "breakneck",
@@ -269,7 +369,9 @@
       "group": "l-shapes",
       "primary": "F (R U R' U') (R U R' U') F'",
       "triggers": "F (double Sexy) F'",
-      "easy": true
+      "easy": true,
+      "pattern": "010110000011010100101",
+      "oll": 48
     },
     {
       "id": "anti-breakneck",
@@ -278,7 +380,9 @@
       "primary": "R' U' (R' F R F') (R' F R F') U R",
       "secondary": "F' (L' U' L U) (L' U' L U) F",
       "triggers": "#1: R' U' (double Sledge) U R #2: for lefties",
-      "easy": false
+      "easy": false,
+      "pattern": "010011000110101001010",
+      "oll": 47
     },
     {
       "id": "anti-frying-pan",
@@ -286,7 +390,9 @@
       "group": "l-shapes",
       "primary": "(r U R' U) (R U' R' U) R U2' r'",
       "notes": "Mirror",
-      "easy": false
+      "easy": false,
+      "pattern": "010011000010101000111",
+      "oll": 54
     },
     {
       "id": "frying-pan",
@@ -294,7 +400,9 @@
       "group": "l-shapes",
       "primary": "(r' U' R U') (R' U R U') R' U2 r",
       "notes": "fat double Anti-Sune",
-      "easy": false
+      "easy": false,
+      "pattern": "000011010000101010111",
+      "oll": 53
     },
     {
       "id": "back-squeezy",
@@ -302,7 +410,9 @@
       "group": "l-shapes",
       "primary": "r U' r2' U r2 U r2' U' r",
       "notes": "Mirror of Front Squeezy",
-      "easy": false
+      "easy": false,
+      "pattern": "010011000011000100111",
+      "oll": 49
     },
     {
       "id": "front-squeezy",
@@ -310,7 +420,9 @@
       "group": "l-shapes",
       "primary": "r' U r2 U' r2' U' r2 U r'",
       "notes": "Never release r!",
-      "easy": false
+      "easy": false,
+      "pattern": "000011010001000110111",
+      "oll": 50
     },
     {
       "id": "mario",
@@ -318,7 +430,9 @@
       "group": "w-shapes",
       "primary": "(R U R' U) (R U' R' U') (R' F R F')",
       "notes": "Sune with sledge insert",
-      "easy": false
+      "easy": false,
+      "pattern": "011110100010110001000",
+      "oll": 38
     },
     {
       "id": "wario",
@@ -327,7 +441,9 @@
       "primary": "(R' U' R U') (R' U R U) l U' R' U x",
       "secondary": "y2 L' U' L U' L' U L U L F' L' F",
       "notes": "#1: Mirror of Mario #2: Lefty",
-      "easy": false
+      "easy": false,
+      "pattern": "100110011100011010000",
+      "oll": 36
     },
     {
       "id": "ant",
@@ -336,7 +452,9 @@
       "primary": "f (R U R' U') (R U R' U') f'",
       "secondary": "y2 F (U R U' R') (U R U' R') F'",
       "triggers": "f 2(sexy) f' , F 2(inverse-sexy) F'",
-      "easy": true
+      "easy": true,
+      "pattern": "000111000011000110101",
+      "oll": 51
     },
     {
       "id": "streetlights",
@@ -345,7 +463,9 @@
       "primary": "r U r' (U R U' R') (U R U' R') r U' r'",
       "secondary": "r' U' r (U' R' U R) (U' R' U R) r' U r",
       "notes": "#1: long but fast #2: Mirror",
-      "easy": false
+      "easy": false,
+      "pattern": "000111000010101010101",
+      "oll": 56
     },
     {
       "id": "highway",
@@ -354,7 +474,9 @@
       "primary": "R U2 R2 (U' R U' R') U2 F R F'",
       "secondary": "y (R' F R U) (R U' R2' F') R2 U' R' (U R U R')",
       "notes": "#1: shorter but shittier #2: longer but fingertrickable",
-      "easy": false
+      "easy": false,
+      "pattern": "010010010000111000111",
+      "oll": 55
     },
     {
       "id": "rice-cooker",
@@ -363,7 +485,9 @@
       "primary": "(R U R' U R U') y (R U' R') F'",
       "secondary": "(R' U' R U' R' U) y' (R' U R) B",
       "notes": "Starts like Sune with different insert",
-      "easy": false
+      "easy": false,
+      "pattern": "010010010100111001010",
+      "oll": 52
     },
     {
       "id": "anti-squeegee",
@@ -371,7 +495,9 @@
       "group": "knight-moves",
       "primary": "(r U r') (R U R' U') (r U' r')",
       "notes": "Mirror of Squeegeeeee",
-      "easy": false
+      "easy": false,
+      "pattern": "001111000110100010100",
+      "oll": 16
     },
     {
       "id": "squeegee",
@@ -380,7 +506,9 @@
       "primary": "(r' U' r) (R' U' R U) (r' U r)",
       "secondary": "y2 l' U' l (L' U' L U) l' U l",
       "notes": "Second one for lefty-lovers, or if you want to know both angles",
-      "easy": false
+      "easy": false,
+      "pattern": "000111001010001011001",
+      "oll": 15
     },
     {
       "id": "anti-gun",
@@ -389,7 +517,9 @@
       "primary": "(R' F R) (U R' F' R) (F U' F')",
       "secondary": "(r' U r) (U r' U' r) y (R U' R')",
       "notes": "You might want to look up some fingertricks for this one",
-      "easy": false
+      "easy": false,
+      "pattern": "000111001110000110100",
+      "oll": 14
     },
     {
       "id": "gun",
@@ -398,7 +528,9 @@
       "primary": "F U R U' R2' F' R U (R U' R')",
       "secondary": "(r U' r') (U' r U r') (F' U F)",
       "notes": "I would say both algs are equally good",
-      "easy": false
+      "easy": false,
+      "pattern": "000111100011001011000",
+      "oll": 13
     },
     {
       "id": "poodle",
@@ -406,7 +538,9 @@
       "group": "awkward-shapes",
       "primary": "(R U R' U R U2' R') F (R U R' U') F'",
       "triggers": "(sune) + (T-case), long but fast!",
-      "easy": false
+      "easy": false,
+      "pattern": "010110101010010101000",
+      "oll": 41
     },
     {
       "id": "wtf",
@@ -415,7 +549,9 @@
       "primary": "r2 D' (r U r') D r2 (U' r' U' r)",
       "secondary": "y (R U R' U') (R U' R') (F' U' F) (R U R')",
       "notes": "#1: verry fast if you nail the D-move #2: If you suck at D moves",
-      "easy": false
+      "easy": false,
+      "pattern": "101110010000110010001",
+      "oll": 29
     },
     {
       "id": "anti-wtf",
@@ -423,7 +559,9 @@
       "group": "awkward-shapes",
       "primary": "F U (R U2 R' U') (R U2 R' U') F'",
       "notes": "Do the first U with a lefty index push",
-      "easy": false
+      "easy": false,
+      "pattern": "010110101010011000100",
+      "oll": 30
     },
     {
       "id": "anti-poodle",
@@ -431,7 +569,9 @@
       "group": "awkward-shapes",
       "primary": "(R' U' R U' R' U2 R) F (R U R' U') F'",
       "triggers": "(Anti-Sune) + (T)",
-      "easy": false
+      "easy": false,
+      "pattern": "101110010101010010000",
+      "oll": 42
     },
     {
       "id": "blank",
@@ -439,7 +579,9 @@
       "group": "dot-cases",
       "primary": "(R U2') (R2' F R F') U2' (R' F R F')",
       "triggers": "(R U2' R') (Sledge) U2' (SLedge)",
-      "easy": false
+      "easy": false,
+      "pattern": "000010000010111010111",
+      "oll": 1
     },
     {
       "id": "zamboni",
@@ -448,7 +590,9 @@
       "primary": "F (R U R' U') F' f (R U R' U') f'",
       "secondary": "y (r U r') U2 R U2' R' U2 (r U' r')",
       "triggers": "F (Sexy) F' f (Sexy) f'",
-      "easy": false
+      "easy": false,
+      "pattern": "000010000011010110111",
+      "oll": 2
     },
     {
       "id": "slash",
@@ -456,7 +600,9 @@
       "group": "dot-cases",
       "primary": "(R U R' U) (R' F R F') U2' (R' F R F')",
       "triggers": "(R U R' U) (sledge) U2' (sledge)",
-      "easy": false
+      "easy": false,
+      "pattern": "100010001010010110011",
+      "oll": 17
     },
     {
       "id": "bunny",
@@ -464,7 +610,9 @@
       "group": "dot-cases",
       "primary": "M U (R U R' U') M' (R' F R F')",
       "triggers": "M U (sexy) M' (sledge)",
-      "easy": false
+      "easy": false,
+      "pattern": "101010000010110010011",
+      "oll": 19
     },
     {
       "id": "anti-nazi",
@@ -472,7 +620,9 @@
       "group": "dot-cases",
       "primary": "f (R U R' U') f' U' F (R U R' U') F'",
       "triggers": "f (sexy) f' U' (T)",
-      "easy": false
+      "easy": false,
+      "pattern": "000010001010011011011",
+      "oll": 3
     },
     {
       "id": "x-aka-super-lip",
@@ -481,7 +631,9 @@
       "primary": "M U (R U R' U') M2' (U R U' r')",
       "triggers": "M U (sexy) M2' (fat insert)",
       "notes": "second alg",
-      "easy": false
+      "easy": false,
+      "pattern": "101010101010010010010",
+      "oll": 20
     },
     {
       "id": "crown",
@@ -490,7 +642,9 @@
       "primary": "(r U R' U R U2 r') (r' U' R U' R' U2 r)",
       "secondary": "y R U2' (R2' F R F') U2' M' (U R U' r')",
       "triggers": "(Righty-Square) (Lefty-Square)",
-      "easy": false
+      "easy": false,
+      "pattern": "101010000111010010010",
+      "oll": 18
     },
     {
       "id": "nazi",
@@ -499,7 +653,9 @@
       "primary": "f (R U R' U') f' U F (R U R' U') F'",
       "triggers": "f (Sexy) f' U (T)",
       "notes": "second alg",
-      "easy": false
+      "easy": false,
+      "pattern": "001010000110110010110",
+      "oll": 4
     }
   ]
 }
