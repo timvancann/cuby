@@ -1,0 +1,25 @@
+{
+  "name": "cuby",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "gen:cases": "tsx tools/gen-cases.ts",
+    "gen:scrambles": "tsx tools/gen-scrambles.ts",
+    "verify": "tsx tools/verify.ts"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.3.0",
+    "svelte": "^5.56.9",
+    "svelte-check": "^4.7.6",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.1",
+    "vitest": "^4.1.10"
+  }
+}

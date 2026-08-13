@@ -1,0 +1,14 @@
+:root {
+  --bg: #101114;
+  --panel: #1a1c21;
+  --panel-2: #22252c;
+  --line: #2d3038;
+  --text: #e8e6df;
+  --dim: #7c818d;
+  --accent: #ffd500;
+  --accent-ink: #171102;
+  --bad: #ff5a5a;
+  --radius: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; }
