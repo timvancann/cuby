@@ -2,15 +2,16 @@
   import { phaseIndex, splits, totalMs } from '../../core/timer/attempt';
   import { recordAttempt, setAttemptFlag } from '../../data/attempts';
   import { endActiveSession } from '../../data/sessions';
-  import { getPhaseSet, getSetting } from '../../data/settings';
+  import { DEFAULT_PHASES, getPhaseSet, getSetting } from '../../data/settings';
   import type { Flag } from '../../data/db';
   import { acquireWakeLock, releaseWakeLock } from '../wakeLock';
   import { nextFullScramble, warmUp } from '../timer/scrambles';
-  import { DONE_DEAD_MS, abortTimer, newTimerAttempt, tapTimer, type TimerFlow } from '../timer/flow';
+  import { abortTimer, newTimerAttempt, tapTimer, type TimerFlow } from '../timer/flow';
 
   let mode = $state<'full' | 'cfop'>('full');
-  let cfopPhases = $state<string[]>(['Cross', 'F2L', 'OLL', 'PLL']);
+  let cfopPhases = $state<string[]>(DEFAULT_PHASES);
   let scramble = $state<string | null>(null);
+  let scrambleError = $state(false);
   let flow = $state<TimerFlow>(newTimerAttempt(['solve']));
   let attemptId = $state<number | null>(null);
   let flag = $state<Flag>('ok');
@@ -20,12 +21,20 @@
 
   const phases = $derived(mode === 'cfop' ? cfopPhases : ['solve']);
 
+  function loadScramble() {
+    scrambleError = false;
+    nextFullScramble().then(s => { scramble = s; }).catch(() => { scrambleError = true; });
+  }
+
   $effect(() => {
     void acquireWakeLock();
     warmUp();
-    getPhaseSet().then(p => { cfopPhases = p; });
+    getPhaseSet().then(p => {
+      cfopPhases = p;
+      if (mode === 'cfop' && flow.stage === 'idle') flow = newTimerAttempt(p);
+    });
     getSetting('vibration', true).then(v => { vibration = v; });
-    nextFullScramble().then(s => { scramble = s; });
+    loadScramble();
     return () => {
       void releaseWakeLock();
       void endActiveSession(Date.now());
@@ -52,6 +61,7 @@
   }
 
   async function onTap() {
+    if (scrambleError) { loadScramble(); return; }
     if (!scramble) return;
     const t = Date.now();
     now = t;
@@ -62,7 +72,7 @@
       scramble = null;
       flow = newTimerAttempt(phases);
       attemptId = null;
-      nextFullScramble().then(s => { scramble = s; });
+      loadScramble();
       return;
     }
     flow = next;
@@ -102,7 +112,9 @@
 
   <button class="zone" onpointerdown={onTap}>
     {#if flow.stage === 'idle'}
-      {#if scramble}
+      {#if scrambleError}
+        <p class="hint">couldn't generate a scramble — tap to retry</p>
+      {:else if scramble}
         <p class="scramble">{scramble}</p>
         <p class="hint">tap to start</p>
       {:else}

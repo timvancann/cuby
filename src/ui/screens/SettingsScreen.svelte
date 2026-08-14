@@ -60,7 +60,7 @@
 
 <style>
   h1 { font-size: 20px; margin-bottom: 12px; }
-  h2.section-title { font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--text-secondary); font-weight: 500; }
+  h2.section-title { font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--dim); font-weight: 500; }
   section { display: grid; gap: 1px; background: var(--line); border-radius: var(--radius); overflow: hidden; }
   .row {
     display: flex; justify-content: space-between; align-items: center;
@@ -75,7 +75,7 @@
     border-radius: 4px; padding: 8px 10px; outline: none;
   }
   .phase-input:focus { border-color: var(--accent); }
-  .save { background: var(--accent); color: white; border: 0; border-radius: 4px; font: 500 13px var(--font-ui);
+  .save { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 4px; font: 500 13px var(--font-ui);
     padding: 8px 14px; cursor: pointer; }
   .save:active { opacity: 0.8; }
   .error { background: var(--panel); color: var(--bad); font: 12px var(--font-ui); padding: 8px 14px; margin: 0;
