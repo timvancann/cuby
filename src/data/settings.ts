@@ -10,6 +10,16 @@ export async function setSetting(key: string, value: unknown): Promise<void> {
   await db.settings.put({ key, value });
 }
 
+export const DEFAULT_PHASES = ['Cross', 'F2L', 'OLL', 'PLL'];
+
+export function getPhaseSet(): Promise<string[]> {
+  return getSetting<string[]>('phaseSet', DEFAULT_PHASES);
+}
+
+export function setPhaseSet(labels: string[]): Promise<void> {
+  return setSetting('phaseSet', [...labels]);
+}
+
 export function getCaseSelection(): Promise<string[]> {
   return getSetting<string[]>('caseSelection', []);
 }
