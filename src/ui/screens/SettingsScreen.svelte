@@ -2,6 +2,7 @@
   import { getSetting, setSetting, getPhaseSet, setPhaseSet } from '../../data/settings';
   import { parsePhaseLabels } from '../phaseSet';
   import { navigate } from '../router.svelte';
+  import TriggerSheet from '../TriggerSheet.svelte';
 
   let vibration = $state(true);
   let persisted = $state<boolean | null>(null);
@@ -9,6 +10,7 @@
   let phaseText = $state('');
   let phaseError = $state('');
   let triggersOpen = $state(false);
+  let openTrigger = $state<{ name: string; moves: string } | null>(null);
 
   const TRIGGERS: { name: string; moves: string }[] = [
     { name: 'Sexy', moves: "R U R' U'" },
@@ -67,9 +69,9 @@
     </button>
     {#if triggersOpen}
       {#each TRIGGERS as t}
-        <div class="row trigger">
+        <button class="row trigger" onclick={() => (openTrigger = t)}>
           <span>{t.name}</span><span class="moves">{t.moves}</span>
-        </div>
+        </button>
       {/each}
     {/if}
   </section>
@@ -83,6 +85,10 @@
   </section>
 </div>
 
+{#if openTrigger}
+  <TriggerSheet name={openTrigger.name} moves={openTrigger.moves} onClose={() => (openTrigger = null)} />
+{/if}
+
 <style>
   h1 { font-size: 20px; margin-bottom: 12px; }
   h2.section-title { font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--dim); font-weight: 500; }
@@ -95,7 +101,7 @@
   .row.editor {
     gap: 8px; cursor: auto; padding: 8px 8px;
   }
-  .row.trigger { cursor: auto; padding: 10px 14px; }
+  .row.trigger { padding: 10px 14px; }
   .moves { font: 600 14px var(--font-mono); color: var(--accent); }
   .phase-input {
     flex: 1; font: 13px var(--font-mono); background: var(--bg); color: var(--text); border: 1px solid var(--line);
