@@ -1,7 +1,7 @@
 <script lang="ts">
   import CaseDiagram from '../CaseDiagram.svelte';
   import { caseById, pools } from '../../data/caseSet';
-  import { activeAlg, getCaseSelection, getSetting } from '../../data/settings';
+  import { activeAlg, getCaseSelection, getSetting, setSetting } from '../../data/settings';
   import { type Flag } from '../../data/db';
   import { endActiveSession } from '../../data/sessions';
   import { recordAttempt, setAttemptFlag } from '../../data/attempts';
@@ -91,6 +91,15 @@
 
   let showScramble = $state(false);
   let practiceMode = $state<'cube' | 'dry'>('cube');
+
+  $effect(() => {
+    getSetting<'cube' | 'dry'>('practiceMode', 'cube').then(m => { practiceMode = m; });
+  });
+
+  function setPracticeMode(m: 'cube' | 'dry') {
+    practiceMode = m;
+    void setSetting('practiceMode', m);
+  }
 </script>
 
 <div class="screen train">
@@ -102,8 +111,8 @@
   {:else if flow}
     <header>
       <div class="pill" role="group" aria-label="Practice mode">
-        <button class:on={practiceMode === 'cube'} onclick={() => (practiceMode = 'cube')}>cube</button>
-        <button class:on={practiceMode === 'dry'} onclick={() => (practiceMode = 'dry')}>dry</button>
+        <button class:on={practiceMode === 'cube'} onclick={() => setPracticeMode('cube')}>cube</button>
+        <button class:on={practiceMode === 'dry'} onclick={() => setPracticeMode('dry')}>dry</button>
       </div>
       {#if practiceMode === 'cube'}
         <span class="dim count">{sessionCount} this session</span>
