@@ -161,6 +161,7 @@
           <h2>{c.name} <span class="dim">#{c.oll}</span></h2>
           <p class="alg">{revealAlg}</p>
           {#if c.triggers}<p class="dim">{c.triggers}</p>{/if}
+          {#if c.notes}<p class="dim note">{c.notes}</p>{/if}
           <div class="splits">
             {#each splits(flow.timer) as sp}
               <span>{sp.label} <b>{fmt(sp.ms)}</b></span>
@@ -223,6 +224,7 @@
   .reveal { display: flex; flex-direction: column; align-items: center; gap: 8px; }
   .reveal h2 { font-size: 20px; }
   .alg { font: 600 17px/1.5 var(--font-mono); max-width: 26ch; }
+  .note { font-size: 12px; max-width: 34ch; }
   .splits { display: flex; gap: 14px; color: var(--dim); font-size: 13px; margin-top: 4px; }
   .splits b { color: var(--text); font-family: var(--font-mono); }
   footer { display: grid; gap: 10px; padding-bottom: 8px; }

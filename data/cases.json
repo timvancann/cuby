@@ -88,7 +88,7 @@
       "name": "Chameleon",
       "group": "oriented-edges",
       "primary": "(r U R' U') (r' F R F')",
-      "notes": "Sexy-move followed by sledge-hammer starting with r's instead of R's",
+      "notes": "Sexy-move followed by sledge starting with r's instad of R's",
       "easy": false,
       "pattern": "011111011100000001000",
       "oll": 24,
