@@ -15,8 +15,8 @@ with a cube in the other hand. So this is that app, and nothing else.
 
 ## Standing on shoulders
 
-Two resources shaped this app more than anything else, and they deserve the
-biggest thanks:
+Three resources shaped this app more than anything else, and they deserve
+the biggest thanks:
 
 - **[CubeHead](https://www.youtube.com/@CubeHead)** — the case content,
   groups, and learning order come straight from the excellent "How to Learn
@@ -24,6 +24,10 @@ biggest thanks:
 - **[Cube Academy](https://www.cube.academy/)** — the gold standard for how
   cube algorithms and notation should be presented. Its clarity was the
   benchmark for every reference screen in this app.
+- **[Best Site Ever](https://bestsiteever.net/oll/)** — the original
+  inspiration for actually training and drilling OLL, and proof that
+  scramble-based case drilling works. Cuby is my attempt to give that idea
+  a modern, phone-first feel.
 
 ## What it does
 
