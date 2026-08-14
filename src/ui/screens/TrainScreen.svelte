@@ -90,15 +90,23 @@
   const c = $derived(flow ? caseById.get(flow.pick.caseId) : undefined);
 
   let showScramble = $state(false);
-  let practiceMode = $state<'cube' | 'dry'>('cube');
+
+  // 'select' shows the mode cards; a chosen mode is remembered so the tab
+  // reopens straight into it. Back returns to (and re-arms) the selection.
+  let view = $state<'select' | 'cube' | 'dry' | null>(null);
 
   $effect(() => {
-    getSetting<'cube' | 'dry'>('practiceMode', 'cube').then(m => { practiceMode = m; });
+    getSetting<'cube' | 'dry' | null>('practiceMode', null).then(m => { view = m ?? 'select'; });
   });
 
-  function setPracticeMode(m: 'cube' | 'dry') {
-    practiceMode = m;
+  function enterMode(m: 'cube' | 'dry') {
+    view = m;
     void setSetting('practiceMode', m);
+  }
+
+  function backToModes() {
+    view = 'select';
+    void setSetting('practiceMode', null);
   }
 </script>
 
@@ -108,13 +116,22 @@
       <p>Select at least 2 cases to train.</p>
       <button class="primary" onclick={() => navigate('/cases')}>Choose cases</button>
     </div>
-  {:else if flow}
+  {:else if view === 'select'}
+    <div class="mode-select">
+      <h1>Train</h1>
+      <button class="mode-card" onclick={() => enterMode('cube')}>
+        <span class="mode-name">Cube practice</span>
+        <span class="dim">scramble, recognize, and solve on your cube</span>
+      </button>
+      <button class="mode-card" onclick={() => enterMode('dry')}>
+        <span class="mode-name">Dry practice</span>
+        <span class="dim">recognition only — no cube in hand</span>
+      </button>
+    </div>
+  {:else if view && flow}
     <header>
-      <div class="pill" role="group" aria-label="Practice mode">
-        <button class:on={practiceMode === 'cube'} onclick={() => setPracticeMode('cube')}>cube</button>
-        <button class:on={practiceMode === 'dry'} onclick={() => setPracticeMode('dry')}>dry</button>
-      </div>
-      {#if practiceMode === 'cube'}
+      <button class="back" onclick={backToModes}>← modes</button>
+      {#if view === 'cube'}
         <span class="dim count">{sessionCount} this session</span>
         {#if flow.stage === 'scrambled'}
           <button class="abort" onclick={() => (showScramble = true)}>animate</button>
@@ -122,7 +139,7 @@
         <button class="abort" onclick={abort}>abort</button>
       {/if}
     </header>
-    {#if practiceMode === 'dry'}
+    {#if view === 'dry'}
       <DryPractice {selected} />
     {:else}
     <button class="zone" onpointerdown={onTap}>
@@ -173,12 +190,20 @@
   .empty { margin: auto; text-align: center; display: grid; gap: 12px; }
   header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
   header .count { margin-left: auto; }
-  .pill { display: flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
-  .pill button {
-    background: transparent; border: 0; color: var(--dim);
-    font: 500 14px var(--font-ui); padding: 0 18px; min-height: 44px; cursor: pointer;
+  .back {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    color: var(--text); font: 600 15px var(--font-ui); padding: 0 18px; min-height: 44px; cursor: pointer;
   }
-  .pill button.on { background: var(--panel-2); color: var(--text); }
+  .mode-select { display: grid; gap: 14px; align-content: center; flex: 1; }
+  .mode-select h1 { font-size: 20px; margin-bottom: 6px; }
+  .mode-card {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+    background: var(--panel); border: 2px solid var(--line); border-radius: var(--radius);
+    color: var(--text); text-align: left; padding: 24px 20px; cursor: pointer;
+  }
+  .mode-card:active { border-color: var(--accent); }
+  .mode-name { font: 700 18px var(--font-ui); }
+  .mode-card .dim { font-size: 13px; }
   .abort {
     background: none; border: 1px solid var(--line); border-radius: var(--radius);
     color: var(--dim); font: 500 14px var(--font-ui); padding: 0 16px; min-height: 44px; cursor: pointer;
