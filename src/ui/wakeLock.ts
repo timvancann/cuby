@@ -12,7 +12,9 @@ async function request(): Promise<void> {
 
 if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', () => {
-    if (wanted && document.visibilityState === 'visible') void request();
+    if (wanted && document.visibilityState === 'visible' && (!sentinel || sentinel.released)) {
+      void request();
+    }
   });
 }
 
@@ -23,6 +25,10 @@ export async function acquireWakeLock(): Promise<void> {
 
 export async function releaseWakeLock(): Promise<void> {
   wanted = false;
-  await sentinel?.release();
+  try {
+    await sentinel?.release();
+  } catch {
+    // already auto-released by the OS — non-fatal
+  }
   sentinel = null;
 }

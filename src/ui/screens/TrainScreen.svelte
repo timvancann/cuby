@@ -1,6 +1,6 @@
 <script lang="ts">
   import CaseDiagram from '../CaseDiagram.svelte';
-  import { caseById } from '../../data/caseSet';
+  import { caseById, pools } from '../../data/caseSet';
   import { activeAlg, getCaseSelection, getSetting } from '../../data/settings';
   import { db, type Flag } from '../../data/db';
   import { sessionForAttempt, endActiveSession } from '../../data/sessions';
@@ -23,8 +23,9 @@
 
   $effect(() => {
     getCaseSelection().then(ids => {
-      selected = ids;
-      if (ids.length >= 2) flow = newAttempt(null, ids, rand);
+      const valid = ids.filter(id => id in pools);
+      selected = valid;
+      if (valid.length >= 2) flow = newAttempt(null, valid, rand);
     });
   });
 
@@ -51,21 +52,26 @@
 
   async function onTap() {
     if (!flow) return;
-    if (vibration && 'vibrate' in navigator) navigator.vibrate(10);
     const t = Date.now();
+    now = t;
     const before = flow;
     const next = tapZone(before, selected, rand, t);
     if (next === before) return;
+    if (vibration && 'vibrate' in navigator) navigator.vibrate(10);
     flow = next;
     if (next.stage === 'reveal') {
       flag = 'ok';
+      attemptId = null;
+      revealAlg = '';
       revealAlg = await activeAlg(next.pick.caseId);
       const sessionId = await sessionForAttempt('case', selected, t);
-      attemptId = (await db.attempts.add({
+      const newId = (await db.attempts.add({
         sessionId, mode: 'case', caseId: next.pick.caseId, scramble: next.pick.scramble,
         startedAt: next.timer.startedAt, splits: splits(next.timer),
         totalMs: totalMs(next.timer), flag: 'ok',
       })) as number;
+      attemptId = newId;
+      if (flag !== 'ok') await db.attempts.update(newId, { flag });
       sessionCount += 1;
     }
   }
