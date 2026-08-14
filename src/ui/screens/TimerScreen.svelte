@@ -167,14 +167,14 @@
   .pill { display: flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
   .pill button {
     background: transparent; border: 0; color: var(--dim);
-    font: 500 12px var(--font-ui); padding: 6px 12px; cursor: pointer;
+    font: 500 14px var(--font-ui); padding: 0 18px; min-height: 44px; cursor: pointer;
   }
   .pill button.on { background: var(--panel-2); color: var(--text); }
   .pill button:disabled { opacity: 0.5; cursor: default; }
   header .dim { margin-left: auto; font-size: 12px; }
   .abort {
     background: none; border: 1px solid var(--line); border-radius: var(--radius);
-    color: var(--dim); font: 500 12px var(--font-ui); padding: 4px 10px; cursor: pointer;
+    color: var(--dim); font: 500 14px var(--font-ui); padding: 0 16px; min-height: 44px; cursor: pointer;
   }
   .zone {
     flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
