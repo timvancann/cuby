@@ -20,6 +20,13 @@ class Worker {
   private proc!: ChildProcessByStdio<Writable, Readable, null>;
   private ready!: Promise<void>;
   private pending: ((line: string) => void) | null = null;
+  // Bumped on every (re)spawn. Each readline listener closes over the
+  // generation of the process it was attached to, so lines that arrive from
+  // a killed child after respawn() has already moved on (kill is not
+  // synchronous -- already-buffered stdout can still be delivered) are
+  // dropped instead of being misattributed to whatever request is now
+  // pending on this worker.
+  private generation = 0;
 
   constructor() {
     this.spawnProc();
@@ -33,11 +40,13 @@ class Worker {
     // pid 1 and keeps consuming CPU forever). Killing the negative pid kills
     // the whole group -- wrapper and nested child together.
     this.proc = spawn(TSX_BIN, [WORKER_SCRIPT], { stdio: ['pipe', 'pipe', 'inherit'], detached: true });
+    const myGeneration = ++this.generation;
     const rl = createInterface({ input: this.proc.stdout });
     let sawReady = false;
     let resolveReady: () => void;
     this.ready = new Promise((res) => { resolveReady = res; });
     rl.on('line', (line) => {
+      if (myGeneration !== this.generation) return; // stale line from a killed process
       if (!sawReady) {
         if (line === 'READY') { sawReady = true; resolveReady(); }
         return;
