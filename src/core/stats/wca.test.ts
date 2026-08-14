@@ -40,3 +40,27 @@ test('lifetimeMean ignores DNFs', () => {
   expect(lifetimeMean([t(10), t(20), DNF])).toBe(15);
   expect(lifetimeMean([DNF])).toBeNull();
 });
+
+// ao50: trim = max(1, ceil(50 * 0.05)) = max(1, ceil(2.5)) = 3 from each side.
+test('ao50 trims proportionally: 2 DNFs stay numeric, 4 DNFs go dnf', () => {
+  // 48 real times (10..480 in steps of 10) + 2 DNFs = 50 results.
+  // trim=3, dnfCount=2 <= trim(3), so it's not a DNF average: the 2 DNFs plus the
+  // single highest real time (480) fill the 3 worst slots, and the 3 lowest reals
+  // (10,20,30) fill the 3 best slots. Kept = reals from 40..470 (44 values).
+  const reals = Array.from({ length: 48 }, (_, i) => t((i + 1) * 10));
+  const twoDnf = [...reals, DNF, DNF];
+  const avgTwo = aoN(twoDnf, 50);
+  expect(avgTwo).not.toBe('dnf');
+  expect(avgTwo).not.toBeNull();
+  const keptTwo = Array.from({ length: 44 }, (_, i) => (i + 4) * 10); // 40..470
+  expect(avgTwo).toBeCloseTo(keptTwo.reduce((a, b) => a + b, 0) / keptTwo.length);
+
+  // Same 48 reals but 4 DNFs (50 total, 46 reals). trim is still 3 (ceil(50*0.05)=3).
+  // dnfCount=4 > trim(3) -> 'dnf'.
+  const fourDnf = [...reals.slice(0, 46), DNF, DNF, DNF, DNF];
+  expect(aoN(fourDnf, 50)).toBe('dnf');
+});
+
+test('degenerate tiny window (2*trim >= n) is dnf, not NaN', () => {
+  expect(aoN([t(10)], 1)).toBe('dnf');
+});

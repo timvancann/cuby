@@ -22,6 +22,10 @@ export async function endActiveSession(now: number): Promise<void> {
   active = null;
 }
 
-export function _resetSessionsForTests(): void {
+export function resetActiveSession(): void {
   active = null;
+}
+
+export function _resetSessionsForTests(): void {
+  resetActiveSession();
 }

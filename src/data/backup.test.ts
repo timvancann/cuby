@@ -41,8 +41,19 @@ test('import replaces, not merges', async () => {
 test('validateBackup rejects garbage before any write', () => {
   expect(validateBackup(null)).toMatch(/./);
   expect(validateBackup({ version: 2 })).toMatch(/version/);
-  expect(validateBackup({ version: 1, sessions: [], attempts: [], algOverrides: [] })).toMatch(/settings/);
-  expect(validateBackup({ version: 1, sessions: [], attempts: [], algOverrides: [], settings: [] })).toBeNull();
+  expect(validateBackup({ version: 1, exportedAt: 1, sessions: [], attempts: [], algOverrides: [] })).toMatch(/settings/);
+  expect(
+    validateBackup({ version: 1, exportedAt: 1, sessions: [], attempts: [], algOverrides: [], settings: [] })
+  ).toBeNull();
+});
+
+test('validateBackup rejects a missing or non-finite exportedAt', () => {
+  expect(
+    validateBackup({ version: 1, sessions: [], attempts: [], algOverrides: [], settings: [] })
+  ).toMatch(/exportedAt/);
+  expect(
+    validateBackup({ version: 1, exportedAt: NaN, sessions: [], attempts: [], algOverrides: [], settings: [] })
+  ).toMatch(/exportedAt/);
 });
 
 test('clearHistory removes sessions+attempts, keeps overrides+settings', async () => {

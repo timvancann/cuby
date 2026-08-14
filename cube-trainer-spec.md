@@ -115,7 +115,7 @@ All modes record attempts into the same local store with a mode discriminator.
 
 - **Per case**: attempt count, best/mean recognition, best/mean solve, DNF rate, misrecognition rate, last-seen date. Sortable — "worst recognition" and "least practiced" orderings are the v1 (read-only) precursor of adaptive scheduling.
 - **Per session**: attempt list with splits, session means.
-- **Per mode, global**: current/best ao5, ao12, ao50, ao100 and lifetime mean (mirroring the "Last avg of" table in the reference timer app). Averages follow WCA trimming rules: aoN drops best and worst; a DNF counts as worst; two DNFs make the average DNF.
+- **Per mode, global**: current/best ao5, ao12, ao50, ao100 and lifetime mean (mirroring the "Last avg of" table in the reference timer app). aoN trims the best and worst 5% (at least one each side, csTimer-style, mirroring the reference timer app); DNFs count as worst; the average is DNF when DNFs exceed the trim.
 - Charts are v1-minimal: a per-case bar of mean recognition vs solve time, and a session-over-session trend line. Everything else is roadmap.
 
 ## 6. Tech Stack & Architecture

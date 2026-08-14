@@ -13,14 +13,18 @@
   let expanded = $state<number | null>(null);
   let expandedAttempts = $state<AttemptRow[]>([]);
 
-  type SortKey = 'name' | 'oll' | 'count' | 'meanRecognition' | 'meanSolve' | 'dnfRate' | 'misrecRate';
+  type SortKey = 'name' | 'count' | 'meanRecognition' | 'meanSolve' | 'dnfRate' | 'misrecRate';
   let sortKey = $state<SortKey>('meanRecognition');
   let sortDesc = $state(true);
+
+  let loadToken = 0;
 
   $effect(() => {
     loaded = false;
     expanded = null;
+    const token = ++loadToken;
     db.attempts.where('mode').equals(mode).sortBy('startedAt').then(rows => {
+      if (token !== loadToken) return; // a later mode switch already superseded this query
       attempts = rows;
       loaded = true;
     });
@@ -69,7 +73,6 @@
   function sortValue(c: CaseStats, key: SortKey): number | string {
     switch (key) {
       case 'name': return caseById.get(c.caseId)?.name ?? c.caseId;
-      case 'oll': return caseById.get(c.caseId)?.oll ?? 0;
       case 'count': return c.count;
       case 'meanRecognition': return c.meanRecognition ?? -1;
       case 'meanSolve': return c.meanSolve ?? -1;
@@ -93,6 +96,11 @@
     sortDesc = true;
   }
 
+  function caret(key: SortKey): string {
+    if (sortKey !== key) return '';
+    return sortDesc ? ' ▼' : ' ▲';
+  }
+
   const barRows = $derived(
     caseRows.map(c => ({
       label: `${caseById.get(c.caseId)?.name ?? c.caseId} #${caseById.get(c.caseId)?.oll ?? ''}`,
@@ -101,14 +109,14 @@
     }))
   );
 
+  const allSessionSummaries = $derived(sessionSummaries(statAttempts));
+
   const sessions = $derived(
-    [...sessionSummaries(statAttempts)].sort((a, b) => b.startedAt - a.startedAt).slice(0, 20)
+    [...allSessionSummaries].sort((a, b) => b.startedAt - a.startedAt).slice(0, 20)
   );
 
   const trendPoints = $derived(
-    sessionSummaries(statAttempts)
-      .map(s => s.meanTotalMs)
-      .filter((v): v is number => v !== null)
+    allSessionSummaries.map(s => s.meanTotalMs).filter((v): v is number => v !== null)
   );
 
   async function toggleSession(sessionId: number) {
@@ -157,20 +165,28 @@
         <h2>Per case</h2>
         <div class="case-table">
           <div class="row head">
-            <button onclick={() => sortBy('name')}>case</button>
-            <button onclick={() => sortBy('count')}>n</button>
-            <button onclick={() => sortBy('meanRecognition')}>rec</button>
-            <button onclick={() => sortBy('meanSolve')}>solve</button>
-            <button onclick={() => sortBy('dnfRate')}>dnf%</button>
-            <button onclick={() => sortBy('misrecRate')}>mis%</button>
+            <button onclick={() => sortBy('name')}>case{caret('name')}</button>
+            <button onclick={() => sortBy('count')}>n{caret('count')}</button>
+            <button onclick={() => sortBy('meanRecognition')}>rec{caret('meanRecognition')}</button>
+            <button onclick={() => sortBy('meanSolve')}>solve{caret('meanSolve')}</button>
+            <span>last</span>
+            <button onclick={() => sortBy('dnfRate')}>dnf%{caret('dnfRate')}</button>
+            <button onclick={() => sortBy('misrecRate')}>mis%{caret('misrecRate')}</button>
           </div>
           {#each sortedCaseRows as c}
             {@const info = caseById.get(c.caseId)}
             <div class="row">
               <span class="case-name">{info?.name ?? c.caseId} <span class="dim">#{info?.oll}</span></span>
               <span class="mono">{c.count}</span>
-              <span class="mono">{c.meanRecognition === null ? '—' : fmtMs(c.meanRecognition)}</span>
-              <span class="mono">{c.meanSolve === null ? '—' : fmtMs(c.meanSolve)}</span>
+              <span class="mono stat-cell">
+                <span>{c.meanRecognition === null ? '—' : fmtMs(c.meanRecognition)}</span>
+                <span class="dim stat-best">{c.bestRecognition === null ? '—' : fmtMs(c.bestRecognition)}</span>
+              </span>
+              <span class="mono stat-cell">
+                <span>{c.meanSolve === null ? '—' : fmtMs(c.meanSolve)}</span>
+                <span class="dim stat-best">{c.bestSolve === null ? '—' : fmtMs(c.bestSolve)}</span>
+              </span>
+              <span class="mono dim">{fmtDate(c.lastSeen)}</span>
               <span class="mono">{fmtPct(c.dnfRate)}</span>
               <span class="mono">{fmtPct(c.misrecRate)}</span>
             </div>
@@ -242,7 +258,7 @@
     border-bottom: 1px solid var(--line); font-size: 13px;
   }
   .avg-table .row { grid-template-columns: 1fr 1fr 1fr; }
-  .case-table .row { grid-template-columns: 2fr 0.6fr 1fr 1fr 0.8fr 0.8fr; gap: 4px; }
+  .case-table .row { grid-template-columns: 1.8fr 0.5fr 1fr 1fr 0.9fr 0.7fr 0.7fr; gap: 4px; }
   .row.head { color: var(--dim); font-size: 11px; text-transform: uppercase; }
   .case-table .row.head button {
     background: none; border: 0; color: var(--dim); font: inherit; text-align: left;
@@ -250,6 +266,8 @@
   }
   .case-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .mono { font-family: var(--font-mono); }
+  .stat-cell { display: flex; flex-direction: column; line-height: 1.3; }
+  .stat-best { font-size: 10px; }
 
   .sessions { display: flex; flex-direction: column; }
   .session-row {

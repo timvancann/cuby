@@ -1,13 +1,16 @@
 export interface TimedResult { totalMs: number; dnf: boolean }
 
 function windowAverage(win: TimedResult[]): number | 'dnf' {
+  const n = win.length;
+  const trim = Math.max(1, Math.ceil(n * 0.05)); // csTimer-style: trim best/worst 5% (at least 1 each side)
   const dnfs = win.filter(r => r.dnf).length;
-  if (dnfs >= 2) return 'dnf';
+  if (dnfs > trim) return 'dnf';
+  if (2 * trim >= n) return 'dnf'; // degenerate window: trimming both ends leaves nothing
   const sorted = [...win].sort((a, b) => {
     if (a.dnf !== b.dnf) return a.dnf ? 1 : -1; // DNF sorts as worst
     return a.totalMs - b.totalMs;
   });
-  const kept = sorted.slice(1, -1);
+  const kept = sorted.slice(trim, n - trim);
   return kept.reduce((sum, r) => sum + r.totalMs, 0) / kept.length;
 }
 

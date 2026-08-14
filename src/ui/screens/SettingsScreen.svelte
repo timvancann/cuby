@@ -81,6 +81,7 @@
   let clearMsg = $state('');
 
   async function doExport() {
+    clearMsg = '';
     const backup = await exportAll(Date.now());
     const json = JSON.stringify(backup, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
@@ -97,6 +98,7 @@
   function pickImportFile() {
     importError = '';
     importMsg = '';
+    clearMsg = '';
     pendingImport = null;
     fileInput?.click();
   }
