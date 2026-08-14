@@ -10,6 +10,7 @@
   import { navigate } from '../router.svelte';
   import { newAttempt, tapZone, type FlowState } from '../train/flow';
   import TriggerSheet from '../TriggerSheet.svelte';
+  import DryPractice from '../train/DryPractice.svelte';
   import { acquireWakeLock, releaseWakeLock } from '../wakeLock';
 
   const rand = mulberry32(Date.now() >>> 0);
@@ -89,6 +90,7 @@
   const c = $derived(flow ? caseById.get(flow.pick.caseId) : undefined);
 
   let showScramble = $state(false);
+  let practiceMode = $state<'cube' | 'dry'>('cube');
 </script>
 
 <div class="screen train">
@@ -99,12 +101,21 @@
     </div>
   {:else if flow}
     <header>
-      <span class="dim">{sessionCount} this session</span>
-      {#if flow.stage === 'scrambled'}
-        <button class="abort" onclick={() => (showScramble = true)}>animate</button>
+      <div class="pill" role="group" aria-label="Practice mode">
+        <button class:on={practiceMode === 'cube'} onclick={() => (practiceMode = 'cube')}>cube</button>
+        <button class:on={practiceMode === 'dry'} onclick={() => (practiceMode = 'dry')}>dry</button>
+      </div>
+      {#if practiceMode === 'cube'}
+        <span class="dim count">{sessionCount} this session</span>
+        {#if flow.stage === 'scrambled'}
+          <button class="abort" onclick={() => (showScramble = true)}>animate</button>
+        {/if}
+        <button class="abort" onclick={abort}>abort</button>
       {/if}
-      <button class="abort" onclick={abort}>abort</button>
     </header>
+    {#if practiceMode === 'dry'}
+      <DryPractice {selected} />
+    {:else}
     <button class="zone" onpointerdown={onTap}>
       {#if flow.stage === 'scrambled'}
         <p class="hint">execute, then tap to start recognition</p>
@@ -140,6 +151,7 @@
         <button class="primary next" onpointerdown={onTap}>Next</button>
       </footer>
     {/if}
+    {/if}
   {/if}
 </div>
 
@@ -150,7 +162,14 @@
 <style>
   .train { display: flex; flex-direction: column; }
   .empty { margin: auto; text-align: center; display: grid; gap: 12px; }
-  header { display: flex; justify-content: space-between; align-items: center; }
+  header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  header .count { margin-left: auto; }
+  .pill { display: flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+  .pill button {
+    background: transparent; border: 0; color: var(--dim);
+    font: 500 12px var(--font-ui); padding: 6px 12px; cursor: pointer;
+  }
+  .pill button.on { background: var(--panel-2); color: var(--text); }
   .abort {
     background: none; border: 1px solid var(--line); border-radius: var(--radius);
     color: var(--dim); font: 500 12px var(--font-ui); padding: 4px 10px; cursor: pointer;

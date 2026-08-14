@@ -3,7 +3,12 @@
   import type { Move } from '../../core/cube/model';
   import { CubeEngine } from './engine';
 
-  let { alg, setup }: { alg: string; setup?: string } = $props();
+  let { alg, setup, controls = true, onReady }: {
+    alg: string;
+    setup?: string;
+    controls?: boolean;
+    onReady?: () => void;
+  } = $props();
 
   let container: HTMLDivElement;
   let engine: CubeEngine | null = null;
@@ -26,6 +31,7 @@
         engine.load(moves, setupMoves);
         position = engine.position;
         ready = true;
+        onReady?.();
       } catch (err) {
         error = err instanceof Error ? err.message : String(err);
       }
@@ -69,7 +75,7 @@
   </div>
   {#if error}
     <p class="error">{error}</p>
-  {:else}
+  {:else if controls}
     <div class="tape">
       {#each moves as mv, i (i)}
         <button
