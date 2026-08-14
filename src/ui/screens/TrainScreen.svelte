@@ -1,13 +1,14 @@
 <script lang="ts">
   import CaseDiagram from '../CaseDiagram.svelte';
   import { caseById } from '../../data/caseSet';
-  import { activeAlg, getCaseSelection } from '../../data/settings';
+  import { activeAlg, getCaseSelection, getSetting } from '../../data/settings';
   import { db, type Flag } from '../../data/db';
-  import { sessionForAttempt } from '../../data/sessions';
+  import { sessionForAttempt, endActiveSession } from '../../data/sessions';
   import { splits, totalMs } from '../../core/timer/attempt';
   import { mulberry32 } from '../../core/rng';
   import { navigate } from '../router.svelte';
   import { newAttempt, tapZone, type FlowState } from '../train/flow';
+  import { acquireWakeLock, releaseWakeLock } from '../wakeLock';
 
   const rand = mulberry32(Date.now() >>> 0);
 
@@ -18,12 +19,22 @@
   let revealAlg = $state('');
   let now = $state(0);
   let sessionCount = $state(0);
+  let vibration = $state(true);
 
   $effect(() => {
     getCaseSelection().then(ids => {
       selected = ids;
       if (ids.length >= 2) flow = newAttempt(null, ids, rand);
     });
+  });
+
+  $effect(() => {
+    void acquireWakeLock();
+    getSetting('vibration', true).then(v => { vibration = v; });
+    return () => {
+      void releaseWakeLock();
+      void endActiveSession(Date.now());
+    };
   });
 
   $effect(() => {
@@ -40,6 +51,7 @@
 
   async function onTap() {
     if (!flow) return;
+    if (vibration && 'vibrate' in navigator) navigator.vibrate(10);
     const t = Date.now();
     const before = flow;
     const next = tapZone(before, selected, rand, t);
