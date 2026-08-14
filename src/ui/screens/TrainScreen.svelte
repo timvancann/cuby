@@ -11,6 +11,7 @@
   import { newAttempt, tapZone, type FlowState } from '../train/flow';
   import TriggerSheet from '../TriggerSheet.svelte';
   import DryPractice from '../train/DryPractice.svelte';
+  import ModeCubeArt from '../train/ModeCubeArt.svelte';
   import { acquireWakeLock, releaseWakeLock } from '../wakeLock';
 
   const rand = mulberry32(Date.now() >>> 0);
@@ -120,12 +121,18 @@
     <div class="mode-select">
       <h1>Train</h1>
       <button class="mode-card" onclick={() => enterMode('cube')}>
-        <span class="mode-name">Cube practice</span>
-        <span class="dim">scramble, recognize, and solve on your cube</span>
+        <ModeCubeArt />
+        <span class="mode-text">
+          <span class="mode-name">Cube practice</span>
+          <span class="dim">scramble, recognize, and solve on your cube</span>
+        </span>
       </button>
       <button class="mode-card" onclick={() => enterMode('dry')}>
-        <span class="mode-name">Dry practice</span>
-        <span class="dim">recognition only — no cube in hand</span>
+        <ModeCubeArt ghost />
+        <span class="mode-text">
+          <span class="mode-name">Dry practice</span>
+          <span class="dim">recognition only — no cube in hand</span>
+        </span>
       </button>
     </div>
   {:else if view && flow}
@@ -197,11 +204,12 @@
   .mode-select { display: grid; gap: 14px; align-content: center; flex: 1; }
   .mode-select h1 { font-size: 20px; margin-bottom: 6px; }
   .mode-card {
-    display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+    display: flex; align-items: center; gap: 18px;
     background: var(--panel); border: 2px solid var(--line); border-radius: var(--radius);
-    color: var(--text); text-align: left; padding: 24px 20px; cursor: pointer;
+    color: var(--text); text-align: left; padding: 22px 20px; cursor: pointer;
   }
   .mode-card:active { border-color: var(--accent); }
+  .mode-text { display: flex; flex-direction: column; gap: 6px; }
   .mode-name { font: 700 18px var(--font-ui); }
   .mode-card .dim { font-size: 13px; }
   .abort {
