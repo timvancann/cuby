@@ -65,11 +65,11 @@
       revealAlg = '';
       revealAlg = await activeAlg(next.pick.caseId);
       const sessionId = await sessionForAttempt('case', selected, t);
-      const newId = (await db.attempts.add({
+      const newId = (await db.attempts.add($state.snapshot({
         sessionId, mode: 'case', caseId: next.pick.caseId, scramble: next.pick.scramble,
         startedAt: next.timer.startedAt, splits: splits(next.timer),
         totalMs: totalMs(next.timer), flag: 'ok',
-      })) as number;
+      }))) as number;
       attemptId = newId;
       if (flag !== 'ok') await db.attempts.update(newId, { flag });
       sessionCount += 1;

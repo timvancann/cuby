@@ -37,3 +37,13 @@ test('endActiveSession stamps endedAt and forgets the session', async () => {
   const b = await sessionForAttempt('case', ['sune', 'key'], 3 * MIN);
   expect(b).not.toBe(a);
 });
+
+test('a proxy-wrapped config array (e.g. Svelte $state) still persists', async () => {
+  // Structured clone (used by fake-indexeddb, same as real IndexedDB) rejects Proxy
+  // objects/arrays. sessionForAttempt must defensively copy `config` before handing it
+  // to Dexie so callers holding a $state proxy don't trigger a DataCloneError.
+  const proxied = new Proxy(['sune', 'key'], {});
+  const id = await sessionForAttempt('case', proxied, 0);
+  const row = await db.sessions.get(id);
+  expect(row!.configSnapshot).toEqual(['sune', 'key']);
+});

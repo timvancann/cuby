@@ -11,7 +11,7 @@ export async function sessionForAttempt(mode: Mode, config: string[], now: numbe
     return active.id;
   }
   if (active) await db.sessions.update(active.id, { endedAt: now });
-  const id = (await db.sessions.add({ mode, startedAt: now, configSnapshot: config })) as number;
+  const id = (await db.sessions.add({ mode, startedAt: now, configSnapshot: [...config] })) as number;
   active = { id, mode, config: key, lastActivityAt: now };
   return id;
 }
