@@ -12,3 +12,17 @@
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; }
+
+:root {
+  --font-ui: "Space Grotesk", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+html, body { height: 100%; }
+body { font-family: var(--font-ui); overscroll-behavior: none; }
+.screen {
+  min-height: 100dvh;
+  padding: 16px 16px calc(72px + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+.screen.center { display: flex; align-items: center; justify-content: center; }
+.dim { color: var(--dim); }
