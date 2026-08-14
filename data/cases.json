@@ -66,8 +66,8 @@
       "group": "oriented-edges",
       "primary": "R U R' U R U2' R'",
       "secondary": "y' R' U2' R U R' U R",
-      "triggers": "Dopest alg of them all",
-      "notes": "",
+      "triggers": "",
+      "notes": "Dopest alg of them all",
       "easy": false,
       "pattern": "010111110001001001000",
       "oll": 27

@@ -8,6 +8,18 @@
   let usage = $state('');
   let phaseText = $state('');
   let phaseError = $state('');
+  let triggersOpen = $state(false);
+
+  const TRIGGERS: { name: string; moves: string }[] = [
+    { name: 'Sexy', moves: "R U R' U'" },
+    { name: 'Anti-sexy', moves: "U R U' R'" },
+    { name: 'Lefty sexy', moves: "L' U' L U" },
+    { name: 'Lefty anti-sexy', moves: "U' L' U L" },
+    { name: 'Sledgehammer', moves: "R' F R F'" },
+    { name: 'Hedgeslammer', moves: "F R' F' R" },
+    { name: 'Lefty sledge', moves: "L F' L' F" },
+    { name: 'Lefty hedge', moves: "F' L F L'" },
+  ];
 
   $effect(() => {
     getSetting('vibration', true).then(v => { vibration = v; });
@@ -48,6 +60,19 @@
       </span>
     </div>
   </section>
+  <h2 class="section-title">Reference</h2>
+  <section>
+    <button class="row" onclick={() => (triggersOpen = !triggersOpen)}>
+      <span>Common triggers</span><span class="dim">{triggersOpen ? 'hide' : 'show'}</span>
+    </button>
+    {#if triggersOpen}
+      {#each TRIGGERS as t}
+        <div class="row trigger">
+          <span>{t.name}</span><span class="moves">{t.moves}</span>
+        </div>
+      {/each}
+    {/if}
+  </section>
   <h2 class="section-title">CFOP phases</h2>
   <section>
     <div class="row editor">
@@ -70,6 +95,8 @@
   .row.editor {
     gap: 8px; cursor: auto; padding: 8px 8px;
   }
+  .row.trigger { cursor: auto; padding: 10px 14px; }
+  .moves { font: 600 14px var(--font-mono); color: var(--accent); }
   .phase-input {
     flex: 1; font: 13px var(--font-mono); background: var(--bg); color: var(--text); border: 1px solid var(--line);
     border-radius: 4px; padding: 8px 10px; outline: none;
