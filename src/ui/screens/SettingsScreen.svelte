@@ -11,7 +11,22 @@
   let phaseText = $state('');
   let phaseError = $state('');
   let triggersOpen = $state(false);
+  let notationOpen = $state(false);
   let openTrigger = $state<{ name: string; moves: string } | null>(null);
+
+  const NOTATION: { name: string; moves: string }[] = [
+    { name: 'R — right face, clockwise', moves: 'R' },
+    { name: "R' — prime: counterclockwise", moves: "R'" },
+    { name: 'R2 — half turn, 180°', moves: 'R2' },
+    { name: 'U D L F B — up, down, left, front, back', moves: 'U D L F B' },
+    { name: 'r — lowercase: two layers (wide)', moves: 'r' },
+    { name: 'M — middle slice, follows L', moves: 'M' },
+    { name: 'E — equator slice, follows D', moves: 'E' },
+    { name: 'S — standing slice, follows F', moves: 'S' },
+    { name: 'x — rotate whole cube, follows R', moves: 'x' },
+    { name: 'y — rotate whole cube, follows U', moves: 'y' },
+    { name: 'z — rotate whole cube, follows F', moves: 'z' },
+  ];
 
   const TRIGGERS: { name: string; moves: string }[] = [
     { name: 'Sexy', moves: "R U R' U'" },
@@ -84,6 +99,16 @@
         </button>
       {/each}
     {/if}
+    <button class="row" onclick={() => (notationOpen = !notationOpen)}>
+      <span>Cube notation</span><span class="dim">{notationOpen ? 'hide' : 'show'}</span>
+    </button>
+    {#if notationOpen}
+      {#each NOTATION as n}
+        <button class="row trigger" onclick={() => (openTrigger = n)}>
+          <span class="notation-name">{n.name}</span><span class="moves">{n.moves}</span>
+        </button>
+      {/each}
+    {/if}
   </section>
   <h2 class="section-title">CFOP phases</h2>
   <section>
@@ -111,8 +136,9 @@
   .row.editor {
     gap: 8px; cursor: auto; padding: 8px 8px;
   }
-  .row.trigger { padding: 10px 14px; }
-  .moves { font: 600 14px var(--font-mono); color: var(--accent); }
+  .row.trigger { padding: 10px 14px; gap: 12px; }
+  .moves { font: 600 14px var(--font-mono); color: var(--accent); white-space: nowrap; }
+  .notation-name { font-size: 13px; }
   .phase-input {
     flex: 1; font: 13px var(--font-mono); background: var(--bg); color: var(--text); border: 1px solid var(--line);
     border-radius: 4px; padding: 8px 10px; outline: none;
