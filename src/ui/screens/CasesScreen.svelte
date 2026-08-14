@@ -1,11 +1,14 @@
 <script lang="ts">
   import CaseDiagram from '../CaseDiagram.svelte';
-  import { cases, groups } from '../../data/caseSet';
+  import CaseSheet from '../CaseSheet.svelte';
+  import { cases, groups, type CaseInfo } from '../../data/caseSet';
   import { getCaseSelection, setCaseSelection } from '../../data/settings';
   import { toggleCase, toggleGroup } from '../selection';
+  import { longpress } from '../longpress';
 
   let selected = $state<string[]>([]);
   let loaded = $state(false);
+  let peek = $state<CaseInfo | null>(null);
 
   $effect(() => {
     getCaseSelection().then(ids => { selected = ids; loaded = true; });
@@ -21,6 +24,7 @@
 
 <div class="screen">
   <h1>Cases <span class="dim">{selected.length}/{cases.length} selected</span></h1>
+  <p class="hint dim">tap to select, hold to see the algorithm</p>
   {#if loaded}
     {#each byGroup as group}
       <section>
@@ -30,7 +34,12 @@
         </button>
         <div class="grid">
           {#each group.cases as c}
-            <button class="tile" class:on={selected.includes(c.id)} onclick={() => update(toggleCase(selected, c.id))}>
+            <button
+              class="tile"
+              class:on={selected.includes(c.id)}
+              use:longpress={{ onLongPress: () => (peek = c) }}
+              onclick={() => update(toggleCase(selected, c.id))}
+            >
               <CaseDiagram pattern={c.pattern} size={64} />
               <span class="name">{c.name}</span>
               <span class="dim">#{c.oll}</span>
@@ -42,8 +51,13 @@
   {/if}
 </div>
 
+{#if peek}
+  <CaseSheet info={peek} onClose={() => (peek = null)} />
+{/if}
+
 <style>
-  h1 { font-size: 20px; margin-bottom: 12px; }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  .hint { font-size: 12px; margin-bottom: 12px; }
   h1 .dim { font-size: 13px; font-weight: 400; margin-left: 8px; }
   section { margin-bottom: 20px; }
   .group-header {
@@ -56,6 +70,7 @@
     display: flex; flex-direction: column; align-items: center; gap: 4px;
     background: var(--panel); border: 2px solid transparent; border-radius: var(--radius);
     color: var(--text); padding: 10px 4px 8px; cursor: pointer; font: 500 12px var(--font-ui);
+    user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
   }
   .tile.on { border-color: var(--accent); }
   .name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
