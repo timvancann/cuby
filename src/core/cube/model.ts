@@ -38,7 +38,7 @@ for (let face = 0; face < 6; face++) {
 
 // axis: 0=x 1=y 2=z; layers: cubie coordinates along the axis that move;
 // q sign: positive = clockwise seen from the positive axis. Same table as cube-stepper.
-const BASE: Record<string, { axis: 0 | 1 | 2; layers: number[]; q: number }> = {
+export const BASE: Record<string, { axis: 0 | 1 | 2; layers: number[]; q: number }> = {
   R: { axis: 0, layers: [1], q: 1 },  L: { axis: 0, layers: [-1], q: -1 },
   U: { axis: 1, layers: [1], q: 1 },  D: { axis: 1, layers: [-1], q: -1 },
   F: { axis: 2, layers: [1], q: 1 },  B: { axis: 2, layers: [-1], q: -1 },

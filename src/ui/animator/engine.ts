@@ -48,6 +48,7 @@ export class CubeEngine {
   position = 0;
 
   private moves: VisualMove[] = [];
+  private setupMoves: VisualMove[] = [];
   private playing = false;
   private busy = false;
   private rafId = 0;
@@ -105,14 +106,14 @@ export class CubeEngine {
 
   load(moves: Move[], setup: Move[] = []): void {
     this.stopPlay();
-    this.buildCube();
-    for (const m of setup) this.startMove(toVisualMove(m), false, 0);
+    this.setupMoves = setup.map(toVisualMove);
     this.moves = moves.map(toVisualMove);
+    this.rebuildTo(0);
     this.position = 0;
   }
 
   stepForward(onDone?: (moved: boolean) => void): void {
-    if (this.busy || this.position >= this.moves.length) {
+    if (this.destroyed || this.busy || this.position >= this.moves.length) {
       onDone?.(false);
       return;
     }
@@ -125,7 +126,7 @@ export class CubeEngine {
   }
 
   stepBack(): void {
-    if (this.busy || this.position <= 0) return;
+    if (this.destroyed || this.busy || this.position <= 0) return;
     this.stopPlay();
     this.busy = true;
     this.startMove(this.moves[this.position - 1], true, this.duration(), () => {
@@ -135,19 +136,24 @@ export class CubeEngine {
   }
 
   jumpTo(i: number): void {
-    if (this.busy) return;
+    if (this.destroyed || this.busy) return;
     this.stopPlay();
-    this.buildCube();
-    for (let idx = 0; idx < i; idx++) this.startMove(this.moves[idx], false, 0);
+    this.rebuildTo(i);
     this.position = i;
   }
 
+  private rebuildTo(i: number): void {
+    this.buildCube();
+    for (const m of this.setupMoves) this.startMove(m, false, 0);
+    for (let idx = 0; idx < i; idx++) this.startMove(this.moves[idx], false, 0);
+  }
+
   play(onStep: (i: number) => void, onEnd: () => void): void {
-    if (this.playing) return;
+    if (this.destroyed || this.playing) return;
     if (this.position >= this.moves.length) this.jumpTo(0);
     this.playing = true;
     const loop = () => {
-      if (!this.playing) return;
+      if (this.destroyed || !this.playing) return;
       this.stepForward(moved => {
         if (!moved || this.position >= this.moves.length) {
           this.playing = false;
@@ -167,8 +173,13 @@ export class CubeEngine {
 
   destroy(): void {
     this.destroyed = true;
+    this.playing = false;
     this.resizeObserver.disconnect();
     cancelAnimationFrame(this.rafId);
+    this.disposeCubies();
+    this.geometry?.dispose();
+    this.geometry = null;
+    this.renderer.forceContextLoss();
     this.renderer.dispose();
     this.renderer.domElement.remove();
   }
@@ -185,11 +196,23 @@ export class CubeEngine {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }
 
+  private geometry: import('three').BoxGeometry | null = null;
+
+  private disposeCubies(): void {
+    for (const c of this.cubies) {
+      this.cubeRoot.remove(c);
+      const mats = Array.isArray(c.material) ? c.material : [c.material];
+      for (const m of mats) m.dispose();
+    }
+  }
+
   private buildCube(): void {
     const THREE = this.THREE;
-    for (const c of this.cubies) this.cubeRoot.remove(c);
+    this.disposeCubies();
     this.cubies = [];
+    this.geometry?.dispose();
     const geo = new THREE.BoxGeometry(0.94, 0.94, 0.94);
+    this.geometry = geo;
     const faceMat = (color: number | null) =>
       new THREE.MeshLambertMaterial({ color: color === null ? PLASTIC : color });
     for (let x = -1; x <= 1; x++) {
@@ -242,6 +265,7 @@ export class CubeEngine {
       lastY = e.clientY;
     });
     el.addEventListener('pointerup', () => (dragging = false));
+    el.addEventListener('pointercancel', () => (dragging = false));
   }
 
   private anim: { move: VisualMove; angle: number; start: number; duration: number; onDone?: () => void } | null =

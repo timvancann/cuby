@@ -62,9 +62,11 @@
     {alg}
     {#if hasOverride}<span class="badge">modified</span>{/if}
   </p>
-  {#key alg}
-    <CubeAnimator {alg} setup={alg} />
-  {/key}
+  {#if alg}
+    {#key alg}
+      <CubeAnimator {alg} setup={alg} />
+    {/key}
+  {/if}
   {#if info.secondary}<p class="alg secondary">{info.secondary}</p>{/if}
   {#if info.triggers}<p class="dim small">{info.triggers}</p>{/if}
   {#if info.notes}<p class="dim small">{info.notes}</p>{/if}

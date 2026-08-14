@@ -34,6 +34,8 @@
     gap: 8px;
     text-align: center;
     animation: rise 160ms ease-out;
+    max-height: 85dvh;
+    overflow-y: auto;
   }
   @keyframes rise {
     from { transform: translateY(24px); opacity: 0; }
