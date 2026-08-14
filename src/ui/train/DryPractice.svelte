@@ -43,9 +43,26 @@
     shownAt = Date.now();
   }
 
-  async function onTap() {
+  // A drag on the cube is a rotation, not a tap: decide on pointerup, but time
+  // the tap from the pointerdown moment so recognition timing stays honest.
+  const DRAG_SLOP_PX = 10;
+  let down: { x: number; y: number; t: number } | null = null;
+
+  function onDown(e: PointerEvent) {
+    down = { x: e.clientX, y: e.clientY, t: Date.now() };
+  }
+
+  function onUp(e: PointerEvent) {
+    if (!down) return;
+    const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y);
+    const t = down.t;
+    down = null;
+    if (moved > DRAG_SLOP_PX) return;
+    void onTap(t);
+  }
+
+  async function onTap(t: number) {
     if (!pick) return;
-    const t = Date.now();
     if (stage === 'show') {
       if (shownAt === 0) return; // cube not rendered yet — timer hasn't started
       elapsedMs = t - shownAt;
@@ -62,7 +79,7 @@
   const c = $derived(pick ? caseById.get(pick.caseId) : undefined);
 </script>
 
-<button class="zone" onpointerdown={onTap}>
+<button class="zone" onpointerdown={onDown} onpointerup={onUp} onpointercancel={() => (down = null)}>
   {#if pick && stage === 'show'}
     {#key pick.scramble}
       <CubeAnimator alg="" setup={setupAlg} controls={false} onReady={cubeReady} />
