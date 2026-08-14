@@ -2,8 +2,9 @@
   import CaseDiagram from '../CaseDiagram.svelte';
   import { caseById, pools } from '../../data/caseSet';
   import { activeAlg, getCaseSelection, getSetting } from '../../data/settings';
-  import { db, type Flag } from '../../data/db';
-  import { sessionForAttempt, endActiveSession } from '../../data/sessions';
+  import { type Flag } from '../../data/db';
+  import { endActiveSession } from '../../data/sessions';
+  import { recordAttempt, setAttemptFlag } from '../../data/attempts';
   import { splits, totalMs } from '../../core/timer/attempt';
   import { mulberry32 } from '../../core/rng';
   import { navigate } from '../router.svelte';
@@ -64,14 +65,12 @@
       attemptId = null;
       revealAlg = '';
       revealAlg = await activeAlg(next.pick.caseId);
-      const sessionId = await sessionForAttempt('case', selected, t);
-      const newId = (await db.attempts.add($state.snapshot({
-        sessionId, mode: 'case', caseId: next.pick.caseId, scramble: next.pick.scramble,
-        startedAt: next.timer.startedAt, splits: splits(next.timer),
-        totalMs: totalMs(next.timer), flag: 'ok',
-      }))) as number;
+      const newId = await recordAttempt({
+        mode: 'case', config: selected, now: t, timer: next.timer,
+        caseId: next.pick.caseId, scramble: next.pick.scramble,
+      });
       attemptId = newId;
-      if (flag !== 'ok') await db.attempts.update(newId, { flag });
+      if (flag !== 'ok') await setAttemptFlag(newId, flag);
       sessionCount += 1;
     }
   }
@@ -83,7 +82,7 @@
 
   async function setFlag(f: Flag) {
     flag = f;
-    if (attemptId !== null) await db.attempts.update(attemptId, { flag: f });
+    if (attemptId !== null) await setAttemptFlag(attemptId, f);
   }
 
   const c = $derived(flow ? caseById.get(flow.pick.caseId) : undefined);
