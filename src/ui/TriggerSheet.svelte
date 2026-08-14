@@ -1,7 +1,11 @@
 <script lang="ts">
   import CubeAnimator from './animator/CubeAnimator.svelte';
 
+  import { drillKeys } from './keys';
+
   let { name, moves, onClose }: { name: string; moves: string; onClose: () => void } = $props();
+
+  $effect(() => drillKeys({ onSpace: () => {}, onEscape: onClose }));
 </script>
 
 <button class="overlay" aria-label="close" onclick={onClose}></button>

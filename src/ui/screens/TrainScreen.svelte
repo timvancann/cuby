@@ -11,6 +11,7 @@
   import { newAttempt, tapZone, type FlowState } from '../train/flow';
   import TriggerSheet from '../TriggerSheet.svelte';
   import DryPractice from '../train/DryPractice.svelte';
+  import { drillKeys } from '../keys';
   import ModeCubeArt from '../train/ModeCubeArt.svelte';
   import { acquireWakeLock, releaseWakeLock } from '../wakeLock';
 
@@ -49,6 +50,14 @@
     tick();
     return () => cancelAnimationFrame(raf);
   });
+
+  $effect(() =>
+    drillKeys({
+      onSpace: () => void onTap(),
+      onEscape: abort,
+      enabled: () => view === 'cube' && flow !== null && !showScramble,
+    }),
+  );
 
   function fmt(ms: number): string {
     return (ms / 1000).toFixed(2);

@@ -4,6 +4,7 @@
   import type { CaseInfo } from '../data/caseSet';
   import { activeAlg } from '../data/settings';
   import { getOverride, setOverride, clearOverride } from '../data/overrides';
+  import { drillKeys } from './keys';
 
   let { info, onClose }: { info: CaseInfo; onClose: () => void } = $props();
   let alg = $state('');
@@ -23,6 +24,8 @@
     hasOverride = false;
     refresh();
   });
+
+  $effect(() => drillKeys({ onSpace: () => {}, onEscape: onClose }));
 
   function startEdit() {
     draft = alg;

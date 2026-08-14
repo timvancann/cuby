@@ -8,6 +8,7 @@
   import { applyAlg, invert, parseAlg, toAlgString } from '../../core/cube/parser';
   import { ollPattern } from '../../core/cube/pattern';
   import { pickAttempt, type AttemptPick } from '../../core/train/select';
+  import { drillKeys } from '../keys';
 
   let { selected }: { selected: string[] } = $props();
 
@@ -55,6 +56,8 @@
   function cubeReady() {
     shownAt = Date.now();
   }
+
+  $effect(() => drillKeys({ onSpace: () => void onTap(Date.now()) }));
 
   // A drag on the cube is a rotation, not a tap: decide on pointerup, but time
   // the tap from the pointerdown moment so recognition timing stays honest.

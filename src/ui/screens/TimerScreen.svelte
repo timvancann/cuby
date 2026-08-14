@@ -8,6 +8,7 @@
   import { nextFullScramble, warmUp } from '../timer/scrambles';
   import { abortTimer, newTimerAttempt, tapTimer, type TimerFlow } from '../timer/flow';
   import TriggerSheet from '../TriggerSheet.svelte';
+  import { drillKeys } from '../keys';
 
   let mode = $state<'full' | 'cfop'>('full');
   let cfopPhases = $state<string[]>(DEFAULT_PHASES);
@@ -101,6 +102,14 @@
   }
 
   let showScramble = $state(false);
+
+  $effect(() =>
+    drillKeys({
+      onSpace: () => void onTap(),
+      onEscape: abort,
+      enabled: () => !showScramble,
+    }),
+  );
 </script>
 
 <div class="screen timer">
