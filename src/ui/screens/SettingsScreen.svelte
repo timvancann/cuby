@@ -5,6 +5,7 @@
   import TriggerSheet from '../TriggerSheet.svelte';
 
   let vibration = $state(true);
+  let dryDisplay = $state<'cube' | 'diagram'>('cube');
   let persisted = $state<boolean | null>(null);
   let usage = $state('');
   let phaseText = $state('');
@@ -30,7 +31,13 @@
       if (e.usage != null) usage = `${(e.usage / 1024 / 1024).toFixed(1)} MB used`;
     });
     getPhaseSet().then(p => { phaseText = p.join(', '); });
+    getSetting<'cube' | 'diagram'>('dryDisplay', 'cube').then(d => { dryDisplay = d; });
   });
+
+  function toggleDryDisplay() {
+    dryDisplay = dryDisplay === 'cube' ? 'diagram' : 'cube';
+    void setSetting('dryDisplay', dryDisplay);
+  }
 
   function toggleVibration() {
     vibration = !vibration;
@@ -54,6 +61,9 @@
     </button>
     <button class="row" onclick={toggleVibration}>
       <span>Vibration on tap</span><span class="dim">{vibration ? 'on' : 'off'}</span>
+    </button>
+    <button class="row" onclick={toggleDryDisplay}>
+      <span>Dry practice display</span><span class="dim">{dryDisplay === 'cube' ? '3D cube' : 'diagram'}</span>
     </button>
     <div class="row">
       <span>Persistent storage</span>

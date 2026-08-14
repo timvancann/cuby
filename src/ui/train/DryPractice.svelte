@@ -2,9 +2,11 @@
   import CaseDiagram from '../CaseDiagram.svelte';
   import CubeAnimator from '../animator/CubeAnimator.svelte';
   import { caseById, pools } from '../../data/caseSet';
-  import { activeAlg } from '../../data/settings';
+  import { activeAlg, getSetting } from '../../data/settings';
   import { mulberry32 } from '../../core/rng';
-  import { invert, parseAlg, toAlgString } from '../../core/cube/parser';
+  import { solvedCube } from '../../core/cube/model';
+  import { applyAlg, invert, parseAlg, toAlgString } from '../../core/cube/parser';
+  import { ollPattern } from '../../core/cube/pattern';
   import { pickAttempt, type AttemptPick } from '../../core/train/select';
 
   let { selected }: { selected: string[] } = $props();
@@ -22,21 +24,32 @@
   let lastCaseId: string | undefined;
   let lastVariantByCase: Record<string, string> = {};
 
+  let display = $state<'cube' | 'diagram' | null>(null);
+
   // CubeAnimator inverts its setup prop, so pass the scramble's inverse:
   // invert(invert(scramble)) = scramble applied to solved = the case state.
   const setupAlg = $derived(pick ? toAlgString(invert(parseAlg(pick.scramble))) : '');
+
+  // The pattern as the scramble actually presents it (random AUF included),
+  // so the symbolic view varies its U rotation like the physical cube would.
+  const presentedPattern = $derived(pick ? ollPattern(applyAlg(solvedCube(), pick.scramble)) : '');
 
   function next() {
     pick = pickAttempt({ selected, pools, lastCaseId, lastVariantByCase, rand });
     lastCaseId = pick.caseId;
     lastVariantByCase[pick.caseId] = pick.variant;
     stage = 'show';
-    shownAt = 0;
     elapsedMs = 0;
+    // The diagram renders synchronously; the 3D cube reports readiness via onReady.
+    shownAt = display === 'diagram' ? Date.now() : 0;
   }
 
   $effect(() => {
-    if (selected.length >= 2 && !pick) next();
+    if (selected.length < 2 || pick) return;
+    getSetting<'cube' | 'diagram'>('dryDisplay', 'cube').then(d => {
+      display = d;
+      next();
+    });
   });
 
   function cubeReady() {
@@ -81,9 +94,13 @@
 
 <button class="zone" onpointerdown={onDown} onpointerup={onUp} onpointercancel={() => (down = null)}>
   {#if pick && stage === 'show'}
-    {#key pick.scramble}
-      <CubeAnimator alg="" setup={setupAlg} controls={false} onReady={cubeReady} />
-    {/key}
+    {#if display === 'diagram'}
+      <CaseDiagram pattern={presentedPattern} size={200} />
+    {:else}
+      {#key pick.scramble}
+        <CubeAnimator alg="" setup={setupAlg} controls={false} onReady={cubeReady} />
+      {/key}
+    {/if}
     <p class="hint">{shownAt ? 'tap when you recognize the case' : 'dealing…'}</p>
   {:else if c}
     <div class="reveal">
