@@ -7,6 +7,7 @@
   import { acquireWakeLock, releaseWakeLock } from '../wakeLock';
   import { nextFullScramble, warmUp } from '../timer/scrambles';
   import { abortTimer, newTimerAttempt, tapTimer, type TimerFlow } from '../timer/flow';
+  import TriggerSheet from '../TriggerSheet.svelte';
 
   let mode = $state<'full' | 'cfop'>('full');
   let cfopPhases = $state<string[]>(DEFAULT_PHASES);
@@ -98,6 +99,8 @@
     flag = f;
     if (attemptId !== null) await setAttemptFlag(attemptId, f);
   }
+
+  let showScramble = $state(false);
 </script>
 
 <div class="screen timer">
@@ -107,6 +110,9 @@
       <button class:on={mode === 'cfop'} disabled={flow.stage === 'running'} onclick={() => setMode('cfop')}>CFOP</button>
     </div>
     <span class="dim">{sessionCount} this session</span>
+    {#if flow.stage === 'idle' && scramble}
+      <button class="abort" onclick={() => (showScramble = true)}>animate</button>
+    {/if}
     <button class="abort" onclick={abort}>abort</button>
   </header>
 
@@ -150,6 +156,10 @@
     </footer>
   {/if}
 </div>
+
+{#if showScramble && scramble}
+  <TriggerSheet name="Scramble" moves={scramble} onClose={() => (showScramble = false)} />
+{/if}
 
 <style>
   .timer { display: flex; flex-direction: column; }

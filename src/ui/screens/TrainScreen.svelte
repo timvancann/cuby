@@ -9,6 +9,7 @@
   import { mulberry32 } from '../../core/rng';
   import { navigate } from '../router.svelte';
   import { newAttempt, tapZone, type FlowState } from '../train/flow';
+  import TriggerSheet from '../TriggerSheet.svelte';
   import { acquireWakeLock, releaseWakeLock } from '../wakeLock';
 
   const rand = mulberry32(Date.now() >>> 0);
@@ -86,6 +87,8 @@
   }
 
   const c = $derived(flow ? caseById.get(flow.pick.caseId) : undefined);
+
+  let showScramble = $state(false);
 </script>
 
 <div class="screen train">
@@ -97,6 +100,9 @@
   {:else if flow}
     <header>
       <span class="dim">{sessionCount} this session</span>
+      {#if flow.stage === 'scrambled'}
+        <button class="abort" onclick={() => (showScramble = true)}>animate</button>
+      {/if}
       <button class="abort" onclick={abort}>abort</button>
     </header>
     <button class="zone" onpointerdown={onTap}>
@@ -136,6 +142,10 @@
     {/if}
   {/if}
 </div>
+
+{#if showScramble && flow}
+  <TriggerSheet name="Scramble" moves={flow.pick.scramble} onClose={() => (showScramble = false)} />
+{/if}
 
 <style>
   .train { display: flex; flex-direction: column; }
