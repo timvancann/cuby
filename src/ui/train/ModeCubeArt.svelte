@@ -1,5 +1,5 @@
 <script lang="ts">
-  let { ghost = false, size = 84 }: { ghost?: boolean; size?: number } = $props();
+  let { size = 84 }: { size?: number } = $props();
 
   // Isometric cube: top face is a rhombus T-R-B-L, sides drop by H.
   const T = [60, 16], R = [104, 38], B = [60, 60], L = [16, 38];
@@ -7,11 +7,11 @@
   const v = [(L[0] - T[0]) / 3, (L[1] - T[1]) / 3]; // one cell along T->L
   const H = 38;
 
-  // The top pattern is a real case: Sune (#27), row 0 at the back.
+  // Solved OLL: the whole top layer yellow.
   const PATTERN = [
-    [0, 1, 0],
     [1, 1, 1],
-    [1, 1, 0],
+    [1, 1, 1],
+    [1, 1, 1],
   ];
 
   function cellPoints(i: number, j: number): string {
@@ -33,23 +33,12 @@
 </script>
 
 <svg viewBox="0 0 120 104" width={size} height={size * 104 / 120} aria-hidden="true">
-  {#if ghost}
-    <polygon points={leftFace} fill="none" stroke="var(--line)" stroke-width="1.5" />
-    <polygon points={rightFace} fill="none" stroke="var(--line)" stroke-width="1.5" />
-    <polygon points={topFace} fill="none" stroke="var(--line)" stroke-width="1.5" />
-  {:else}
-    <polygon points={leftFace} fill="#1c1e24" />
-    <polygon points={rightFace} fill="#15171c" />
-    <polygon points={topFace} fill="var(--panel-2)" />
-  {/if}
+  <polygon points={leftFace} fill="#1c1e24" />
+  <polygon points={rightFace} fill="#15171c" />
+  <polygon points={topFace} fill="var(--panel-2)" />
   {#each PATTERN as row, i}
     {#each row as on, j}
-      <polygon
-        points={cellPoints(i, j)}
-        fill={on ? 'var(--accent)' : ghost ? 'none' : '#101114'}
-        stroke={on ? 'none' : 'var(--line)'}
-        stroke-width={ghost ? 1 : 0.6}
-      />
+      <polygon points={cellPoints(i, j)} fill={on ? 'var(--accent)' : '#101114'} />
     {/each}
   {/each}
 </svg>

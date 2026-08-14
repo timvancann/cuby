@@ -121,18 +121,14 @@
     <div class="mode-select">
       <h1>Train</h1>
       <button class="mode-card" onclick={() => enterMode('cube')}>
-        <ModeCubeArt />
-        <span class="mode-text">
-          <span class="mode-name">Cube practice</span>
-          <span class="dim">scramble, recognize, and solve on your cube</span>
-        </span>
+        <ModeCubeArt size={120} />
+        <span class="mode-name">OLL Cube Practice</span>
+        <span class="dim">scramble, recognize, and solve on your cube</span>
       </button>
       <button class="mode-card" onclick={() => enterMode('dry')}>
-        <ModeCubeArt ghost />
-        <span class="mode-text">
-          <span class="mode-name">Dry practice</span>
-          <span class="dim">recognition only — no cube in hand</span>
-        </span>
+        <CaseDiagram pattern={caseById.get('sune')?.pattern ?? ''} size={104} />
+        <span class="mode-name">OLL Dry Practice</span>
+        <span class="dim">recognition only — no cube in hand</span>
       </button>
     </div>
   {:else if view && flow}
@@ -201,17 +197,17 @@
     background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
     color: var(--text); font: 600 15px var(--font-ui); padding: 0 18px; min-height: 44px; cursor: pointer;
   }
-  .mode-select { display: grid; gap: 14px; align-content: center; flex: 1; }
-  .mode-select h1 { font-size: 20px; margin-bottom: 6px; }
+  .mode-select { display: grid; gap: 16px; align-content: center; justify-items: center; flex: 1; }
+  .mode-select h1 { font-size: 20px; justify-self: start; }
   .mode-card {
-    display: flex; align-items: center; gap: 18px;
-    background: var(--panel); border: 2px solid var(--line); border-radius: var(--radius);
-    color: var(--text); text-align: left; padding: 22px 20px; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+    aspect-ratio: 1; width: min(100%, 38dvh);
+    background: var(--panel); border: 2px solid var(--line); border-radius: 14px;
+    color: var(--text); text-align: center; padding: 18px; cursor: pointer;
   }
   .mode-card:active { border-color: var(--accent); }
-  .mode-text { display: flex; flex-direction: column; gap: 6px; }
   .mode-name { font: 700 18px var(--font-ui); }
-  .mode-card .dim { font-size: 13px; }
+  .mode-card .dim { font-size: 12px; max-width: 24ch; }
   .abort {
     background: none; border: 1px solid var(--line); border-radius: var(--radius);
     color: var(--dim); font: 500 14px var(--font-ui); padding: 0 16px; min-height: 44px; cursor: pointer;
