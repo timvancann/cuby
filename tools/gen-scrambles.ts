@@ -5,7 +5,7 @@ import { f2lSolved, normalizedOllPattern } from '../src/core/cube/pattern';
 import { randomPllState } from '../src/core/cube/pll';
 import { mulberry32 } from '../src/core/rng';
 import { SolverPool } from './solve-pool';
-import type { CasesDb } from './enrich';
+import { caseState, FACE_TURN, type CasesDb } from './enrich';
 
 // --- Why this isn't the brief's straight-line loop ---
 // The brief assumed cubejs's solve(maxDepth) behaves like a normal bounded
@@ -57,7 +57,6 @@ import type { CasesDb } from './enrich';
 const SEED = 20260813;
 const PER_CASE = 50;
 const MAX_HTM = 14;
-const FACE_ONLY = /^[UDLRFB]['2]?$/;
 const WORKERS = 12;
 const TIMEOUT_MS = 6000;
 const MAX_ATTEMPTS_PER_CASE = PER_CASE * 4000;
@@ -71,9 +70,7 @@ async function main() {
   const pools: Record<string, string[]> = {};
 
   for (const c of db.cases) {
-    const targetPattern = normalizedOllPattern(
-      applyAlg(solvedCube(), toAlgString(invert(parseAlg(c.primary)))),
-    );
+    const targetPattern = normalizedOllPattern(caseState(c.primary));
     const poolSet = new Set<string>();
     let attempts = 0;
     let rejectedVerifications = 0;
@@ -107,7 +104,7 @@ async function main() {
         const solution = result.alg;
         if (!solution) continue; // already solved (shouldn't happen for LL-scrambled states)
         const moves = solution.split(' ');
-        if (moves.length > MAX_HTM || !moves.every((m) => FACE_ONLY.test(m))) continue;
+        if (moves.length > MAX_HTM || !moves.every((m) => FACE_TURN.test(m))) continue;
         const scramble = toAlgString(invert(parseAlg(solution)));
         // Self-verify before accepting (this, not the solver, carries the
         // correctness guarantee -- spec section 6.4). cubejs occasionally
