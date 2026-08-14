@@ -3,6 +3,7 @@
   import { parsePhaseLabels } from '../phaseSet';
   import { navigate } from '../router.svelte';
   import TriggerSheet from '../TriggerSheet.svelte';
+  import { exportAll, validateBackup, importAll, clearHistory, type BackupFile } from '../../data/backup';
 
   let vibration = $state(true);
   let dryDisplay = $state<'cube' | 'diagram'>('cube');
@@ -39,7 +40,7 @@
     { name: 'Lefty hedge', moves: "F' L F L'" },
   ];
 
-  $effect(() => {
+  function loadSettings() {
     getSetting('vibration', true).then(v => { vibration = v; });
     getSetting<boolean | null>('storagePersisted', null).then(p => { persisted = p; });
     navigator.storage?.estimate?.().then(e => {
@@ -47,6 +48,10 @@
     });
     getPhaseSet().then(p => { phaseText = p.join(', '); });
     getSetting<'cube' | 'diagram'>('dryDisplay', 'cube').then(d => { dryDisplay = d; });
+  }
+
+  $effect(() => {
+    loadSettings();
   });
 
   function toggleDryDisplay() {
@@ -65,6 +70,85 @@
     phaseError = '';
     phaseText = parsed.labels.join(', ');
     void setPhaseSet(parsed.labels);
+  }
+
+  let fileInput = $state<HTMLInputElement | null>(null);
+  let exportMsg = $state('');
+  let importError = $state('');
+  let importMsg = $state('');
+  let pendingImport = $state.raw<BackupFile | null>(null);
+  let clearOpen = $state(false);
+  let clearMsg = $state('');
+
+  async function doExport() {
+    const backup = await exportAll(Date.now());
+    const json = JSON.stringify(backup, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const date = new Date().toISOString().slice(0, 10);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cuby-export-${date}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    exportMsg = `exported ${backup.attempts.length} attempts`;
+  }
+
+  function pickImportFile() {
+    importError = '';
+    importMsg = '';
+    pendingImport = null;
+    fileInput?.click();
+  }
+
+  async function onFileChosen(e: Event) {
+    const input = e.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    importError = '';
+    importMsg = '';
+    pendingImport = null;
+    let data: unknown;
+    try {
+      data = JSON.parse(await file.text());
+    } catch {
+      importError = 'not valid JSON';
+      return;
+    }
+    const err = validateBackup(data);
+    if (err) {
+      importError = err;
+      return;
+    }
+    pendingImport = data as BackupFile;
+  }
+
+  async function confirmImport() {
+    if (!pendingImport) return;
+    await importAll(pendingImport);
+    importMsg = 'import complete';
+    pendingImport = null;
+    loadSettings();
+  }
+
+  function cancelImport() {
+    pendingImport = null;
+  }
+
+  function openClearConfirm() {
+    clearMsg = '';
+    clearOpen = true;
+  }
+
+  function cancelClear() {
+    clearOpen = false;
+  }
+
+  async function confirmClear() {
+    await clearHistory();
+    clearOpen = false;
+    clearMsg = 'history cleared';
   }
 </script>
 
@@ -118,6 +202,49 @@
     </div>
     {#if phaseError}<p class="error">{phaseError}</p>{/if}
   </section>
+  <h2 class="section-title">Data</h2>
+  <section>
+    <button class="row" onclick={doExport}>
+      <span>Export</span><span class="dim">download backup</span>
+    </button>
+    {#if exportMsg}<p class="hint">{exportMsg}</p>{/if}
+    <button class="row" onclick={pickImportFile}>
+      <span>Import</span><span class="dim">replace with backup file</span>
+    </button>
+    {#if importError}<p class="error">{importError}</p>{/if}
+    {#if importMsg}<p class="hint">{importMsg}</p>{/if}
+    {#if pendingImport}
+      <div class="row confirm">
+        <span>Replace ALL data with this file? ({pendingImport.attempts.length} attempts, exported {new Date(pendingImport.exportedAt).toISOString().slice(0, 10)})</span>
+        <div class="actions">
+          <button class="btn" onclick={confirmImport}>Confirm</button>
+          <button class="btn" onclick={cancelImport}>Cancel</button>
+        </div>
+      </div>
+    {/if}
+    <input
+      type="file"
+      accept="application/json"
+      bind:this={fileInput}
+      onchange={onFileChosen}
+      class="hidden-input"
+    />
+    {#if !clearOpen}
+      <button class="row" onclick={openClearConfirm}>
+        <span>Clear history</span><span class="dim">delete sessions &amp; attempts</span>
+      </button>
+    {:else}
+      <div class="row confirm">
+        <span>Delete ALL sessions and attempts? Algorithms and settings survive.</span>
+        <div class="actions">
+          <button class="btn" onclick={doExport}>Export first</button>
+          <button class="btn bad" onclick={confirmClear}>Delete</button>
+          <button class="btn" onclick={cancelClear}>Cancel</button>
+        </div>
+      </div>
+    {/if}
+    {#if clearMsg}<p class="hint">{clearMsg}</p>{/if}
+  </section>
 </div>
 
 {#if openTrigger}
@@ -149,4 +276,13 @@
   .save:active { opacity: 0.8; }
   .error { background: var(--panel); color: var(--bad); font: 12px var(--font-ui); padding: 8px 14px; margin: 0;
     border-top: 1px solid var(--line); }
+  .hint { background: var(--panel); color: var(--dim); font: 12px var(--font-ui); padding: 8px 14px; margin: 0;
+    border-top: 1px solid var(--line); }
+  .hidden-input { display: none; }
+  .row.confirm { flex-direction: column; align-items: stretch; gap: 10px; cursor: auto; }
+  .actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .btn { background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 4px;
+    font: 500 13px var(--font-ui); padding: 8px 14px; cursor: pointer; }
+  .btn:active { opacity: 0.8; }
+  .btn.bad { background: var(--bad); color: var(--accent-ink); border-color: var(--bad); }
 </style>
