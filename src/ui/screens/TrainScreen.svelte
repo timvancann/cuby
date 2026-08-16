@@ -12,6 +12,7 @@
   import TriggerSheet from '../TriggerSheet.svelte';
   import DryPractice from '../train/DryPractice.svelte';
   import { drillKeys } from '../keys';
+  import ScrambleGrid from '../ScrambleGrid.svelte';
   import ModeCubeArt from '../train/ModeCubeArt.svelte';
   import { acquireWakeLock, releaseWakeLock } from '../wakeLock';
 
@@ -157,7 +158,7 @@
     <button class="zone" onpointerdown={onTap}>
       {#if flow.stage === 'scrambled'}
         <p class="hint">execute, then tap to start recognition</p>
-        <p class="scramble">{flow.pick.scramble}</p>
+        <ScrambleGrid scramble={flow.pick.scramble} perRow={4} />
       {:else if flow.stage === 'recognizing'}
         <p class="clock">{fmt(now - flow.timer.startedAt)}</p>
         <p class="hint">recognizing — tap when you start turning</p>
@@ -228,7 +229,6 @@
     -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none;
   }
   .hint { color: var(--dim); font-size: 13px; }
-  .scramble { font: 600 26px/1.6 var(--font-mono); max-width: 22ch; }
   .clock { font: 600 64px var(--font-mono); font-variant-numeric: tabular-nums; }
   .reveal { display: flex; flex-direction: column; align-items: center; gap: 8px; }
   .reveal h2 { font-size: 20px; }

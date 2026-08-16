@@ -11,6 +11,7 @@
   import TriggerSheet from '../TriggerSheet.svelte';
   import CubeAnimator from '../animator/CubeAnimator.svelte';
   import PhaseBar from '../timer/PhaseBar.svelte';
+  import ScrambleGrid from '../ScrambleGrid.svelte';
   import { drillKeys } from '../keys';
 
   let mode = $state<'full' | 'cfop'>('full');
@@ -29,12 +30,6 @@
   // CubeAnimator inverts its setup, so pass the scramble's inverse to show
   // the scrambled state (same trick as dry practice).
   const setupFor = (s: string) => toAlgString(invert(parseAlg(s)));
-  const scrambleRows = (s: string) => {
-    const moves = s.split(' ');
-    const rows: string[][] = [];
-    for (let i = 0; i < moves.length; i += 6) rows.push(moves.slice(i, i + 6));
-    return rows;
-  };
 
   let upcoming = $state<string | null>(null);
 
@@ -161,11 +156,7 @@
         <p class="hint">couldn't generate a scramble — tap to retry</p>
       {:else if scramble}
         <p class="clock idle">0.00</p>
-        <div class="scramble-grid">
-          {#each scrambleRows(scramble) as row}
-            <div class="srow">{#each row as m}<span>{m}</span>{/each}</div>
-          {/each}
-        </div>
+        <ScrambleGrid {scramble} />
         <div class="cube" role="presentation" onpointerdown={e => e.stopPropagation()}>
           {#key scramble}
             <CubeAnimator alg="" setup={setupFor(scramble)} controls={false} size={185} />
@@ -190,11 +181,7 @@
       {#if upcoming}
         <div class="next-up">
           <p class="hint">next scramble</p>
-          <div class="scramble-grid small">
-            {#each scrambleRows(upcoming) as row}
-              <div class="srow">{#each row as m}<span>{m}</span>{/each}</div>
-            {/each}
-          </div>
+          <ScrambleGrid scramble={upcoming} small />
           <div class="cube" role="presentation" onpointerdown={e => e.stopPropagation()}>
             {#key upcoming}
               <CubeAnimator alg="" setup={setupFor(upcoming)} controls={false} size={140} />
@@ -240,11 +227,6 @@
     gap: 14px; background: none; border: 0; color: var(--text); cursor: pointer;
     -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none;
   }
-  .scramble-grid { display: grid; gap: 6px; }
-  .scramble-grid .srow { display: grid; grid-template-columns: repeat(6, 44px); justify-content: center; }
-  .scramble-grid span { font: 600 22px var(--font-mono); text-align: center; }
-  .scramble-grid.small .srow { grid-template-columns: repeat(6, 36px); }
-  .scramble-grid.small span { font-size: 17px; color: var(--dim); }
   .cube { display: flex; justify-content: center; }
   .next-up { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 6px; }
   .hint { color: var(--dim); font-size: 13px; }
