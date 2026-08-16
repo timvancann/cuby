@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { phaseIndex, splits, totalMs } from '../../core/timer/attempt';
+  import { splits, totalMs } from '../../core/timer/attempt';
   import { recordAttempt, setAttemptFlag } from '../../data/attempts';
   import { endActiveSession } from '../../data/sessions';
   import { DEFAULT_PHASES, getPhaseSet, getSetting } from '../../data/settings';
@@ -7,7 +7,10 @@
   import { acquireWakeLock, releaseWakeLock } from '../wakeLock';
   import { nextFullScramble, warmUp } from '../timer/scrambles';
   import { abortTimer, newTimerAttempt, tapTimer, type TimerFlow } from '../timer/flow';
+  import { invert, parseAlg, toAlgString } from '../../core/cube/parser';
   import TriggerSheet from '../TriggerSheet.svelte';
+  import CubeAnimator from '../animator/CubeAnimator.svelte';
+  import PhaseBar from '../timer/PhaseBar.svelte';
   import { drillKeys } from '../keys';
 
   let mode = $state<'full' | 'cfop'>('full');
@@ -22,6 +25,25 @@
   let sessionCount = $state(0);
 
   const phases = $derived(mode === 'cfop' ? cfopPhases : ['solve']);
+
+  // CubeAnimator inverts its setup, so pass the scramble's inverse to show
+  // the scrambled state (same trick as dry practice).
+  const setupFor = (s: string) => toAlgString(invert(parseAlg(s)));
+  const scrambleRows = (s: string) => {
+    const moves = s.split(' ');
+    const rows: string[][] = [];
+    for (let i = 0; i < moves.length; i += 6) rows.push(moves.slice(i, i + 6));
+    return rows;
+  };
+
+  let upcoming = $state<string | null>(null);
+
+  // Elapsed in the phase currently running, for the live segment.
+  const liveMs = $derived(
+    flow.stage === 'running'
+      ? now - (flow.timer.boundaries.length ? flow.timer.boundaries[flow.timer.boundaries.length - 1] : flow.timer.startedAt)
+      : 0,
+  );
 
   function loadScramble() {
     scrambleError = false;
@@ -71,16 +93,24 @@
     if (next === flow) return;
     if (vibration && 'vibrate' in navigator) navigator.vibrate(10);
     if (next === 'next') {
-      scramble = null;
+      // The upcoming scramble was prefetched when the result appeared.
+      if (upcoming) {
+        scramble = upcoming;
+        upcoming = null;
+      } else {
+        scramble = null;
+        loadScramble();
+      }
       flow = newTimerAttempt(phases);
       attemptId = null;
-      loadScramble();
       return;
     }
     flow = next;
     if (next.stage === 'done') {
       flag = 'ok';
       attemptId = null;
+      upcoming = null;
+      nextFullScramble().then(s => { upcoming = s; }).catch(() => {});
       const id = await recordAttempt({
         mode, config: mode === 'cfop' ? cfopPhases : [], now: t,
         timer: next.timer, scramble,
@@ -115,7 +145,7 @@
 <div class="screen timer">
   <header>
     <div class="pill" role="group" aria-label="Timer mode">
-      <button class:on={mode === 'full'} disabled={flow.stage === 'running'} onclick={() => setMode('full')}>Full solve</button>
+      <button class:on={mode === 'full'} disabled={flow.stage === 'running'} onclick={() => setMode('full')}>Full</button>
       <button class:on={mode === 'cfop'} disabled={flow.stage === 'running'} onclick={() => setMode('cfop')}>CFOP</button>
     </div>
     <span class="dim">{sessionCount} this session</span>
@@ -130,7 +160,17 @@
       {#if scrambleError}
         <p class="hint">couldn't generate a scramble — tap to retry</p>
       {:else if scramble}
-        <p class="scramble">{scramble}</p>
+        <p class="clock idle">0.00</p>
+        <div class="scramble-grid">
+          {#each scrambleRows(scramble) as row}
+            <div class="srow">{#each row as m}<span>{m}</span>{/each}</div>
+          {/each}
+        </div>
+        <div class="cube" role="presentation" onpointerdown={e => e.stopPropagation()}>
+          {#key scramble}
+            <CubeAnimator alg="" setup={setupFor(scramble)} controls={false} size={185} />
+          {/key}
+        </div>
         <p class="hint">tap to start</p>
       {:else}
         <p class="hint">generating scramble…</p>
@@ -138,18 +178,28 @@
     {:else if flow.stage === 'running'}
       <p class="clock">{fmt(now - flow.timer.startedAt)}</p>
       {#if mode === 'cfop'}
-        <p class="phase">{phases[phaseIndex(flow.timer)]}</p>
-        <div class="mini-splits">
-          {#each splits(flow.timer) as sp}<span>{sp.label} <b>{fmt(sp.ms)}</b></span>{/each}
-        </div>
+        <PhaseBar {phases} splits={splits(flow.timer)} {liveMs} />
       {:else}
         <p class="hint">tap to stop</p>
       {/if}
     {:else}
       <p class="clock final">{fmt(totalMs(flow.timer))}</p>
       {#if mode === 'cfop'}
-        <div class="mini-splits">
-          {#each splits(flow.timer) as sp}<span>{sp.label} <b>{fmt(sp.ms)}</b></span>{/each}
+        <PhaseBar {phases} splits={splits(flow.timer)} />
+      {/if}
+      {#if upcoming}
+        <div class="next-up">
+          <p class="hint">next scramble</p>
+          <div class="scramble-grid small">
+            {#each scrambleRows(upcoming) as row}
+              <div class="srow">{#each row as m}<span>{m}</span>{/each}</div>
+            {/each}
+          </div>
+          <div class="cube" role="presentation" onpointerdown={e => e.stopPropagation()}>
+            {#key upcoming}
+              <CubeAnimator alg="" setup={setupFor(upcoming)} controls={false} size={140} />
+            {/key}
+          </div>
         </div>
       {/if}
     {/if}
@@ -190,13 +240,17 @@
     gap: 14px; background: none; border: 0; color: var(--text); cursor: pointer;
     -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none;
   }
-  .scramble { font: 600 24px/1.7 var(--font-mono); max-width: 24ch; }
+  .scramble-grid { display: grid; gap: 6px; }
+  .scramble-grid .srow { display: grid; grid-template-columns: repeat(6, 44px); justify-content: center; }
+  .scramble-grid span { font: 600 22px var(--font-mono); text-align: center; }
+  .scramble-grid.small .srow { grid-template-columns: repeat(6, 36px); }
+  .scramble-grid.small span { font-size: 17px; color: var(--dim); }
+  .cube { display: flex; justify-content: center; }
+  .next-up { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 6px; }
   .hint { color: var(--dim); font-size: 13px; }
   .clock { font: 600 64px var(--font-mono); font-variant-numeric: tabular-nums; }
+  .clock.idle { color: var(--dim); font-size: 48px; }
   .clock.final { color: var(--accent); }
-  .phase { font: 600 18px var(--font-ui); color: var(--accent); }
-  .mini-splits { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; color: var(--dim); font-size: 13px; }
-  .mini-splits b { color: var(--text); font-family: var(--font-mono); }
   footer { display: grid; gap: 10px; padding-bottom: 8px; }
   .flags { display: flex; gap: 8px; }
   .flags button {

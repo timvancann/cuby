@@ -3,11 +3,12 @@
   import type { Move } from '../../core/cube/model';
   import { CubeEngine } from './engine';
 
-  let { alg, setup, controls = true, onReady }: {
+  let { alg, setup, controls = true, onReady, size }: {
     alg: string;
     setup?: string;
     controls?: boolean;
     onReady?: () => void;
+    size?: number; // fixed pixel size; defaults to the responsive CSS size
   } = $props();
 
   let container: HTMLDivElement;
@@ -70,7 +71,7 @@
 </script>
 
 <div class="animator">
-  <div class="stage" bind:this={container}>
+  <div class="stage" bind:this={container} style={size ? `width:${size}px;height:${size}px` : ''}>
     {#if !ready && !error}<div class="loading">loading…</div>{/if}
   </div>
   {#if error}
