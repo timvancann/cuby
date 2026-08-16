@@ -32,6 +32,12 @@ export function newAttempt(
   };
 }
 
+// Re-arm the same pick as a fresh attempt (scramble unchanged, timer reset) —
+// for retrying a misrecognized or DNF'd case with the identical setup.
+export function retryAttempt(s: FlowState): FlowState {
+  return { ...s, stage: 'scrambled', timer: createTimer(PHASES), revealAt: 0 };
+}
+
 export function tapZone(s: FlowState, selected: string[], rand: () => number, now: number): FlowState {
   if (s.stage === 'scrambled') return { ...s, stage: 'recognizing', timer: tap(s.timer, now) };
   if (s.stage === 'recognizing') return { ...s, stage: 'solving', timer: tap(s.timer, now) };

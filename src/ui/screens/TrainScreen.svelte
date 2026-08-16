@@ -8,7 +8,7 @@
   import { splits, totalMs } from '../../core/timer/attempt';
   import { mulberry32 } from '../../core/rng';
   import { navigate } from '../router.svelte';
-  import { newAttempt, tapZone, type FlowState } from '../train/flow';
+  import { newAttempt, retryAttempt, tapZone, type FlowState } from '../train/flow';
   import TriggerSheet from '../TriggerSheet.svelte';
   import DryPractice from '../train/DryPractice.svelte';
   import { drillKeys } from '../keys';
@@ -98,6 +98,11 @@
     if (attemptId !== null) await setAttemptFlag(attemptId, f);
   }
 
+  function retry() {
+    if (!flow || flow.stage !== 'reveal') return;
+    flow = retryAttempt(flow);
+  }
+
   const c = $derived(flow ? caseById.get(flow.pick.caseId) : undefined);
 
   let showScramble = $state(false);
@@ -178,6 +183,10 @@
             {/each}
             <span>total <b>{fmt(totalMs(flow.timer))}</b></span>
           </div>
+          <div class="reveal-scramble">
+            <span class="dim slabel">scramble</span>
+            <ScrambleGrid scramble={flow.pick.scramble} small perRow={5} />
+          </div>
         </div>
       {/if}
     </button>
@@ -188,7 +197,10 @@
           <button class:on={flag === 'misrecognized'} onclick={() => setFlag('misrecognized')}>misrec.</button>
           <button class:on={flag === 'dnf'} onclick={() => setFlag('dnf')}>DNF</button>
         </div>
-        <button class="primary next" onpointerdown={onTap}>Next</button>
+        <div class="actions">
+          <button class="secondary" onclick={retry}>Retry scramble</button>
+          <button class="primary next" onpointerdown={onTap}>Next</button>
+        </div>
       </footer>
     {/if}
     {/if}
@@ -234,6 +246,13 @@
   .reveal h2 { font-size: 20px; }
   .alg { font: 600 17px/1.5 var(--font-mono); max-width: 26ch; }
   .note { font-size: 12px; max-width: 34ch; }
+  .reveal-scramble { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: 6px; }
+  .slabel { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 8px; }
+  .secondary {
+    background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius);
+    font: 600 14px var(--font-ui); padding: 14px 0; cursor: pointer;
+  }
   .splits { display: flex; gap: 14px; color: var(--dim); font-size: 13px; margin-top: 4px; }
   .splits b { color: var(--text); font-family: var(--font-mono); }
   footer { display: grid; gap: 10px; padding-bottom: 8px; }

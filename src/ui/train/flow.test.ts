@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { newAttempt, tapZone, REVEAL_DEAD_MS } from './flow';
+import { newAttempt, retryAttempt, tapZone, REVEAL_DEAD_MS } from './flow';
 import { mulberry32 } from '../../core/rng';
 import { splits, totalMs } from '../../core/timer/attempt';
 import { pools } from '../../data/caseSet';
@@ -35,6 +35,19 @@ test('reveal ignores taps inside the dead-time, advances after it', () => {
   const after = tapZone(s, selected, rand, 1000 + REVEAL_DEAD_MS);
   expect(after.stage).toBe('scrambled');
   expect(after.lastCaseId).not.toBe(s.pick.caseId);
+});
+
+test('retryAttempt re-arms the same scramble with a fresh timer', () => {
+  const rand = mulberry32(9);
+  let s = newAttempt(null, selected, rand);
+  const pick = s.pick;
+  s = tapZone(s, selected, rand, 0);
+  s = tapZone(s, selected, rand, 500);
+  s = tapZone(s, selected, rand, 1000); // reveal
+  const retried = retryAttempt(s);
+  expect(retried.stage).toBe('scrambled');
+  expect(retried.pick).toBe(pick); // identical scramble and case
+  expect(retried.timer.status).toBe('idle');
 });
 
 test('consecutive attempts never repeat the case (3 selected)', () => {
