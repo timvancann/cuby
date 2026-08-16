@@ -23,8 +23,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // Precache everything, including the large lazy cubing/three chunks,
-        // so scrambles and the animator work offline (spec §4.3, §6.2).
+        // Precache everything, including the lazy three chunk and the solver
+        // worker, so scrambles and the animator work offline (spec §4.3, §6.2).
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
       },

@@ -91,7 +91,7 @@ All modes record attempts into the same local store with a mode discriminator.
 
 ### 4.3 Full-solve and CFOP modes
 
-- These need genuine random-state full scrambles. Use `cubing.js` (`randomScrambleForEvent("333")`) — the WCA-official scramble library — executed in a web worker, assets cached by the service worker so it works offline after first load.
+- These need genuine random-state full scrambles. Implementation (revised 2026-08-16): a classic web worker running the vendored `cubejs` two-phase solver (`public/solver/`) — uniform random state, solve, invert, csTimer-style. Originally `cubing.js` per the WCA-official-library preference, but its internal worker breaks under production bundling ("document is not defined"); the vendored classic worker is bundler-proof, ~1.2 MB lighter, and its assets are precached by the service worker so it works offline after first load.
 - The dependency is isolated to these two modes; case training never touches it.
 
 ## 5. Data, Stats, Persistence

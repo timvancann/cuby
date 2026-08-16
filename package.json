@@ -29,7 +29,6 @@
     "vitest": "^4.1.10"
   },
   "dependencies": {
-    "cubing": "^0.63.3",
     "dexie": "^4.4.4",
     "three": "^0.185.1"
   }
