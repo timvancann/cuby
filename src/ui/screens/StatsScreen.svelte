@@ -6,6 +6,8 @@
   import { navigate } from '../router.svelte';
   import CaseBarChart from '../stats/CaseBarChart.svelte';
   import SessionTrend from '../stats/SessionTrend.svelte';
+  import CaseDiagram from '../CaseDiagram.svelte';
+  import SegmentedControl from '../SegmentedControl.svelte';
 
   let mode = $state<Mode>('case');
   let attempts = $state<AttemptRow[]>([]);
@@ -129,10 +131,12 @@
 </script>
 
 <div class="screen stats">
-  <div class="pill" role="group" aria-label="Stats mode">
-    <button class:on={mode === 'case'} onclick={() => (mode = 'case')}>Case</button>
-    <button class:on={mode === 'full'} onclick={() => (mode = 'full')}>Full</button>
-    <button class:on={mode === 'cfop'} onclick={() => (mode = 'cfop')}>CFOP</button>
+  <div class="mode-select-wrap">
+    <SegmentedControl
+      options={[{ value: 'case', label: 'Case' }, { value: 'full', label: 'Full' }, { value: 'cfop', label: 'CFOP' }]}
+      value={mode}
+      onChange={v => (mode = v as Mode)}
+    />
   </div>
 
   {#if loaded && attempts.length === 0}
@@ -176,15 +180,22 @@
           {#each sortedCaseRows as c}
             {@const info = caseById.get(c.caseId)}
             <div class="row">
-              <span class="case-name">{info?.name ?? c.caseId} <span class="dim">#{info?.oll}</span></span>
+              <span class="case-name">
+                {#if info}<CaseDiagram pattern={info.pattern} size={26} />{/if}
+                <span class="name-text">{info?.name ?? c.caseId} <span class="dim">#{info?.oll}</span></span>
+              </span>
               <span class="mono">{c.count}</span>
               <span class="mono stat-cell">
                 <span>{c.meanRecognition === null ? '—' : fmtMs(c.meanRecognition)}</span>
-                <span class="dim stat-best">{c.bestRecognition === null ? '—' : fmtMs(c.bestRecognition)}</span>
+                {#if c.count > 1}
+                  <span class="dim stat-best">{c.bestRecognition === null ? '—' : fmtMs(c.bestRecognition)}</span>
+                {/if}
               </span>
               <span class="mono stat-cell">
                 <span>{c.meanSolve === null ? '—' : fmtMs(c.meanSolve)}</span>
-                <span class="dim stat-best">{c.bestSolve === null ? '—' : fmtMs(c.bestSolve)}</span>
+                {#if c.count > 1}
+                  <span class="dim stat-best">{c.bestSolve === null ? '—' : fmtMs(c.bestSolve)}</span>
+                {/if}
               </span>
               <span class="mono dim">{fmtDate(c.lastSeen)}</span>
               <span class="mono">{fmtPct(c.dnfRate)}</span>
@@ -236,12 +247,7 @@
 
 <style>
   .stats { display: flex; flex-direction: column; gap: 4px; }
-  .pill { display: flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; align-self: flex-start; margin-bottom: 8px; }
-  .pill button {
-    background: transparent; border: 0; color: var(--dim);
-    font: 500 14px var(--font-ui); padding: 0 18px; min-height: 44px; cursor: pointer;
-  }
-  .pill button.on { background: var(--panel-2); color: var(--text); }
+  .mode-select-wrap { margin-bottom: 12px; }
 
   .empty { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 60px 0; }
   .link {
@@ -258,13 +264,14 @@
     border-bottom: 1px solid var(--line); font-size: 13px;
   }
   .avg-table .row { grid-template-columns: 1fr 1fr 1fr; }
-  .case-table .row { grid-template-columns: 1.8fr 0.5fr 1fr 1fr 0.9fr 0.7fr 0.7fr; gap: 4px; }
+  .case-table .row { grid-template-columns: 1.9fr 0.4fr 1fr 1fr 0.9fr 0.6fr 0.6fr; gap: 4px; min-height: 44px; }
+  .case-name { display: flex; align-items: center; gap: 8px; }
+  .name-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .row.head { color: var(--dim); font-size: 11px; text-transform: uppercase; }
   .case-table .row.head button {
     background: none; border: 0; color: var(--dim); font: inherit; text-align: left;
     text-transform: uppercase; cursor: pointer; padding: 0; min-height: 36px;
   }
-  .case-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .mono { font-family: var(--font-mono); }
   .stat-cell { display: flex; flex-direction: column; line-height: 1.3; }
   .stat-best { font-size: 10px; }

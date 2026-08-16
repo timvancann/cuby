@@ -13,6 +13,7 @@
   import PhaseBar from '../timer/PhaseBar.svelte';
   import ScrambleGrid from '../ScrambleGrid.svelte';
   import { drillKeys } from '../keys';
+  import SegmentedControl from '../SegmentedControl.svelte';
 
   let mode = $state<'full' | 'cfop'>('full');
   let cfopPhases = $state<string[]>(DEFAULT_PHASES);
@@ -139,9 +140,13 @@
 
 <div class="screen timer">
   <header>
-    <div class="pill" role="group" aria-label="Timer mode">
-      <button class:on={mode === 'full'} disabled={flow.stage === 'running'} onclick={() => setMode('full')}>Full</button>
-      <button class:on={mode === 'cfop'} disabled={flow.stage === 'running'} onclick={() => setMode('cfop')}>CFOP</button>
+    <div class="mode-wrap">
+      <SegmentedControl
+        options={[{ value: 'full', label: 'Full' }, { value: 'cfop', label: 'CFOP' }]}
+        value={mode}
+        disabled={flow.stage === 'running'}
+        onChange={v => setMode(v as 'full' | 'cfop')}
+      />
     </div>
     <span class="dim">{sessionCount} this session</span>
     {#if flow.stage === 'idle' && scramble}
@@ -210,13 +215,7 @@
 <style>
   .timer { display: flex; flex-direction: column; }
   header { display: flex; align-items: center; gap: 10px; }
-  .pill { display: flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
-  .pill button {
-    background: transparent; border: 0; color: var(--dim);
-    font: 500 14px var(--font-ui); padding: 0 18px; min-height: 44px; cursor: pointer;
-  }
-  .pill button.on { background: var(--panel-2); color: var(--text); }
-  .pill button:disabled { opacity: 0.5; cursor: default; }
+  .mode-wrap { min-width: 150px; }
   header .dim { margin-left: auto; font-size: 12px; }
   .abort {
     background: none; border: 1px solid var(--line); border-radius: var(--radius);
