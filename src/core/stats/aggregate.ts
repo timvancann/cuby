@@ -10,8 +10,6 @@ export interface StatAttempt {
 export interface CaseStats {
   caseId: string;
   count: number;
-  bestRecognition: number | null;
-  meanRecognition: number | null;
   bestSolve: number | null;
   meanSolve: number | null;
   dnfRate: number;
@@ -33,13 +31,10 @@ export function perCaseStats(attempts: StatAttempt[]): CaseStats[] {
   }
   return [...byCase.entries()].map(([caseId, list]) => {
     const timed = list.filter(a => a.flag !== 'dnf');
-    const recogs = timed.map(a => splitMs(a, 'recognition')).filter((x): x is number => x !== undefined);
     const solves = timed.map(a => splitMs(a, 'solve')).filter((x): x is number => x !== undefined);
     return {
       caseId,
       count: list.length,
-      bestRecognition: min(recogs),
-      meanRecognition: mean(recogs),
       bestSolve: min(solves),
       meanSolve: mean(solves),
       dnfRate: list.filter(a => a.flag === 'dnf').length / list.length,

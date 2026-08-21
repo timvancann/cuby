@@ -5,12 +5,12 @@
 
 ## 1. Overview, Goals, Non-Goals
 
-A personal, frontend-only PWA to drill Rubik's cube last-layer recognition and execution, built around the CubeHead "OLL in One Month" learning order. The core loop: the app shows a scramble, the user recognizes the case on the physical cube, solves it, and the app reveals the case and records recognition/solve splits.
+A personal, frontend-only PWA to drill Rubik's cube last-layer recognition and execution, built around the CubeHead "OLL in One Month" learning order. The core loop: the app shows a scramble, the user recognizes the case on the physical cube, solves it, and the app reveals the case and records the solve time.
 
 - **Primary user:** the author. Single user, phone-first, one hand on the phone and one on the cube. No accounts, no server, no telemetry.
 - **Goals:**
   1. Make recognition practice frictionless enough for daily use.
-  2. Split recognition time from execution time so the per-case bottleneck is visible.
+  2. Make the per-case bottleneck visible through per-case solve times (a separate recognition split existed originally but was dropped — recognition is near-instant in practice).
   3. Be a serviceable everyday speedcube timer, so the app replaces an existing timer rather than supplementing one.
   4. Work fully offline after first load.
 - **Non-goals for v1:** multi-user or sync; adaptive scheduling (the data model records what it needs, but scheduling stays uniform-random); PLL/F2L/other case sets (the architecture leaves the door open, see §8); smart-cube connectivity (event-source interface only, §3.3); app store distribution.
@@ -22,7 +22,7 @@ Terms used consistently throughout this spec and the codebase:
 - **Case** — one of the 57 OLL states, identified by canonical number (1–57) and PDF name, belonging to exactly one **Group**. A case's identity is its top-layer *orientation pattern* (which of the 8 LL pieces have yellow facing up, and where the yellow stickers of the misoriented ones point). Recognition is rotation-dependent in appearance but the case is AUF-invariant: the same case seen at 4 possible angles.
 - **Algorithm** — an ordered move sequence in standard notation (face, wide, slice, rotation moves; primes; doubles) that solves a case. Each case has a default primary and optional secondary algorithm, plus trigger shorthand and notes. Exactly one algorithm per case is *active* (default: primary; user-overridable).
 - **Scramble** — a move sequence that, applied to a solved cube held yellow-up, produces a chosen case with a randomized LL permutation and randomized AUF, leaving F2L intact.
-- **Attempt** — one timed unit. Common fields: mode, timestamps, total duration, flag (`ok` / `misrecognized` / `dnf`), and mode-specific fields: case id + scramble + recognition/solve splits (case training); ordered named phase splits (CFOP timer); nothing extra (full solve).
+- **Attempt** — one timed unit. Common fields: mode, timestamps, total duration, flag (`ok` / `misrecognized` / `dnf`), and mode-specific fields: case id + scramble + a single solve split (case training; attempts recorded before 2026-08 also carry a recognition split); ordered named phase splits (CFOP timer); nothing extra (full solve).
 - **Session** — a run of consecutive attempts in one mode with one configuration (the selected case subset for case training; the phase set for the CFOP timer). Attempts always belong to a session; a session records its configuration snapshot so history stays interpretable after the selection changes.
 - **Phase set** — a user-editable named list of phase labels for the CFOP timer (default: Cross, F2L, OLL, PLL).
 - **Timer event** — a timestamped signal (`tap`) consumed by the timer core to advance the attempt state machine. V1 has one event source (screen taps); the interface is designed so a future smart-cube source can emit equivalent events (first-turn-detected, solved-detected).
@@ -39,12 +39,11 @@ Terms used consistently throughout this spec and the codebase:
 
 ### 3.2 Training loop (core feature)
 
-One attempt flows through four states, advanced by tapping anywhere in the large central tap zone:
+One attempt flows through three states, advanced by tapping anywhere in the large central tap zone (until 2026-08 the loop had a separate recognition split between two extra taps; recognition proved near-instant in practice, so it was folded into the single solve timer):
 
 1. **SCRAMBLED → READY.** The app picks a case from the selected subset (v1: uniform random; see §8 for adaptive scheduling) and generates a scramble for it (§4). The scramble is displayed in large monospace type. The user executes it on the physical cube, yellow side up. No case image, name, or hint is shown — recognition happens on the physical cube, not the screen.
-2. **Tap 1 — recognition starts.** The user looks at the cube. Screen shows a running timer, nothing else.
-3. **Tap 2 — recognition ends, solve starts.** Tapped at the moment the user begins turning. The recognition split is stored; the solve timer runs.
-4. **Tap 3 — solve ends, reveal.** The app reveals: case name + number, its diagram, the user's configured algorithm for it (with alternative notation names, e.g. "sexy + sledge"), and this attempt's splits (recognition / solve / total). A prominent "next" action generates the following attempt.
+2. **Tap 1 — solve starts.** The user looks at the cube, recognizes the case, and solves it. Screen shows a running timer, nothing else.
+3. **Tap 2 — solve ends, reveal.** The app reveals: case name + number, its diagram, the user's configured algorithm for it (with alternative notation names, e.g. "sexy + sledge"), and this attempt's solve time. A prominent "next" action generates the following attempt.
 
 Additional rules:
 
@@ -59,7 +58,7 @@ Three modes share one timer core. The core consumes timestamped events from an a
 
 1. **Full solve.** Classic speedcube timer: tap to start, tap to stop. Generates its own random-state full scrambles. Stores single-duration attempts.
 2. **CFOP phase timer.** Like full solve, but intermediate taps mark named phase boundaries. Default phase set: Cross → F2L → OLL → PLL. Phase sets are user-editable named lists ("stopwatch with named rounds") so e.g. Cross → F2L1–4 → OLL → PLL is possible. Stores per-phase splits.
-3. **Case training.** The loop from §3.2. Phases are fixed: recognition → solve.
+3. **Case training.** The loop from §3.2. A single fixed phase: solve.
 
 All modes record attempts into the same local store with a mode discriminator.
 
@@ -78,7 +77,7 @@ All modes record attempts into the same local store with a mode discriminator.
 
 ### 4.1 Case-training pools (build time)
 
-- For each of the 57 cases, a generator script (repo tooling, run offline — not app code) produces **N ≥ 50 distinct scrambles** and writes them to `scrambles.json`, keyed by case id.
+- For each of the 57 cases, a generator script (repo tooling, run offline — not app code) produces **N ≥ 25 distinct scrambles** and writes them to `scrambles.json`, keyed by case id. (The generator targets 50 before stripping the redundant leading/trailing U-layer turns, which only rotate the solved or finished top layer; stripping can collapse near-duplicates, so committed pools land between 25 and 50.)
 - Each pool entry is generated from a random target state in the case's family: F2L solved, top-layer orientation = the case, LL permutation drawn uniformly at random, random AUF. The state is then solved near-optimally and the inverse solution is stored as the scramble.
 - Length budget: **≤ 14 HTM** per scramble (LL-only states are optimally solvable well within this). Short scrambles are a feature: less execution surface, fewer botched setups.
 - Generator tooling (decided): `cubejs`, a pure-JS Kociemba two-phase solver, as a tools-only devDependency — no binaries, CI-friendly. Solutions over the length budget are rejected and resampled. (A custom IDA* was considered and dropped: near-optimal depth-14 search needs Korf-style pattern databases, a solver subproject in its own right.) The acceptance criteria below hold regardless of tooling; the CI verifier, not the solver, carries correctness (§6.4).
@@ -87,7 +86,7 @@ All modes record attempts into the same local store with a mode discriminator.
 ### 4.2 Runtime selection
 
 - On each attempt: pick a case (v1: uniform over the selected subset, never the same case twice in a row when |subset| ≥ 3), pick a pool variant uniformly (never the same variant twice in a row for that case), and append a random final AUF from {∅, U, U', U2} so the same variant still presents at varying angles.
-- Anti-memorization stance: 50 variants × 4 AUFs per case exceeds what is practically memorizable; if it ever proves insufficient, regenerate pools with a new random seed — no app change needed.
+- Anti-memorization stance: 25+ variants × 4 AUFs per case exceeds what is practically memorizable; if it ever proves insufficient, regenerate pools with a new random seed — no app change needed.
 
 ### 4.3 Full-solve and CFOP modes
 
@@ -113,10 +112,10 @@ All modes record attempts into the same local store with a mode discriminator.
 
 ### 5.3 Stats
 
-- **Per case**: attempt count, best/mean recognition, best/mean solve, DNF rate, misrecognition rate, last-seen date. Sortable — "worst recognition" and "least practiced" orderings are the v1 (read-only) precursor of adaptive scheduling.
+- **Per case**: attempt count, best/mean solve, DNF rate, misrecognition rate, last-seen date. Sortable — "worst solve" and "least practiced" orderings are the v1 (read-only) precursor of adaptive scheduling.
 - **Per session**: attempt list with splits, session means.
 - **Per mode, global**: current/best ao5, ao12, ao50, ao100 and lifetime mean (mirroring the "Last avg of" table in the reference timer app). aoN trims the best and worst 5% (at least one each side, csTimer-style, mirroring the reference timer app); DNFs count as worst; the average is DNF when DNFs exceed the trim.
-- Charts are v1-minimal: a per-case bar of mean recognition vs solve time, and a session-over-session trend line. Everything else is roadmap.
+- Charts are v1-minimal: a session-over-session trend line (a per-case recognition-vs-solve bar chart existed while the recognition split did). Everything else is roadmap.
 
 ## 6. Tech Stack & Architecture
 

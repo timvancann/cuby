@@ -4,7 +4,6 @@
   import { aoN, bestAoN, lifetimeMean, type TimedResult } from '../../core/stats/wca';
   import { perCaseStats, sessionSummaries, type CaseStats, type StatAttempt } from '../../core/stats/aggregate';
   import { navigate } from '../router.svelte';
-  import CaseBarChart from '../stats/CaseBarChart.svelte';
   import SessionTrend from '../stats/SessionTrend.svelte';
   import CaseDiagram from '../CaseDiagram.svelte';
   import SegmentedControl from '../SegmentedControl.svelte';
@@ -15,8 +14,8 @@
   let expanded = $state<number | null>(null);
   let expandedAttempts = $state<AttemptRow[]>([]);
 
-  type SortKey = 'name' | 'count' | 'meanRecognition' | 'meanSolve' | 'dnfRate' | 'misrecRate';
-  let sortKey = $state<SortKey>('meanRecognition');
+  type SortKey = 'name' | 'count' | 'meanSolve' | 'dnfRate' | 'misrecRate';
+  let sortKey = $state<SortKey>('meanSolve');
   let sortDesc = $state(true);
 
   let loadToken = 0;
@@ -76,7 +75,6 @@
     switch (key) {
       case 'name': return caseById.get(c.caseId)?.name ?? c.caseId;
       case 'count': return c.count;
-      case 'meanRecognition': return c.meanRecognition ?? -1;
       case 'meanSolve': return c.meanSolve ?? -1;
       case 'dnfRate': return c.dnfRate;
       case 'misrecRate': return c.misrecRate;
@@ -102,14 +100,6 @@
     if (sortKey !== key) return '';
     return sortDesc ? ' ▼' : ' ▲';
   }
-
-  const barRows = $derived(
-    caseRows.map(c => ({
-      label: `${caseById.get(c.caseId)?.name ?? c.caseId} #${caseById.get(c.caseId)?.oll ?? ''}`,
-      recognition: c.meanRecognition ?? 0,
-      solve: c.meanSolve ?? 0,
-    }))
-  );
 
   const allSessionSummaries = $derived(sessionSummaries(statAttempts));
 
@@ -171,7 +161,6 @@
           <div class="row head">
             <button onclick={() => sortBy('name')}>case{caret('name')}</button>
             <button onclick={() => sortBy('count')}>n{caret('count')}</button>
-            <button onclick={() => sortBy('meanRecognition')}>rec{caret('meanRecognition')}</button>
             <button onclick={() => sortBy('meanSolve')}>solve{caret('meanSolve')}</button>
             <span>last</span>
             <button onclick={() => sortBy('dnfRate')}>dnf%{caret('dnfRate')}</button>
@@ -186,12 +175,6 @@
               </span>
               <span class="mono">{c.count}</span>
               <span class="mono stat-cell">
-                <span>{c.meanRecognition === null ? '—' : fmtMs(c.meanRecognition)}</span>
-                {#if c.count > 1}
-                  <span class="dim stat-best">{c.bestRecognition === null ? '—' : fmtMs(c.bestRecognition)}</span>
-                {/if}
-              </span>
-              <span class="mono stat-cell">
                 <span>{c.meanSolve === null ? '—' : fmtMs(c.meanSolve)}</span>
                 {#if c.count > 1}
                   <span class="dim stat-best">{c.bestSolve === null ? '—' : fmtMs(c.bestSolve)}</span>
@@ -205,10 +188,6 @@
         </div>
       </section>
 
-      <section>
-        <h2>Recognition vs solve</h2>
-        <CaseBarChart rows={barRows} />
-      </section>
     {/if}
 
     <section>
@@ -264,7 +243,7 @@
     border-bottom: 1px solid var(--line); font-size: 13px;
   }
   .avg-table .row { grid-template-columns: 1fr 1fr 1fr; }
-  .case-table .row { grid-template-columns: 1.9fr 0.4fr 1fr 1fr 0.9fr 0.6fr 0.6fr; gap: 4px; min-height: 44px; }
+  .case-table .row { grid-template-columns: 1.9fr 0.4fr 1fr 0.9fr 0.6fr 0.6fr; gap: 4px; min-height: 44px; }
   .case-name { display: flex; align-items: center; gap: 8px; }
   .name-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .row.head { color: var(--dim); font-size: 11px; text-transform: uppercase; }

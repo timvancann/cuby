@@ -7,23 +7,23 @@ const att = (over: Partial<StatAttempt>): StatAttempt => ({
   totalMs: 2800, flag: 'ok', ...over,
 });
 
-test('perCaseStats aggregates times, rates, lastSeen', () => {
+test('perCaseStats aggregates solve times and rates across old and new split shapes', () => {
   const rows = [
-    att({}),
-    att({ startedAt: 200, splits: [{ label: 'recognition', ms: 400 }, { label: 'solve', ms: 3000 }], totalMs: 3400, flag: 'misrecognized' }),
+    att({}), // legacy two-split attempt: its solve split still counts
+    att({ startedAt: 200, splits: [{ label: 'solve', ms: 3000 }], totalMs: 3000, flag: 'misrecognized' }),
     att({ startedAt: 300, flag: 'dnf' }),
-    att({ caseId: 'key', startedAt: 50, splits: [{ label: 'recognition', ms: 500 }, { label: 'solve', ms: 1500 }], totalMs: 2000 }),
+    att({ caseId: 'key', startedAt: 50, splits: [{ label: 'solve', ms: 1500 }], totalMs: 1500 }),
   ];
   const stats = perCaseStats(rows);
   const sune = stats.find(s => s.caseId === 'sune')!;
   expect(sune.count).toBe(3);
-  expect(sune.bestRecognition).toBe(400);
-  expect(sune.meanRecognition).toBe(600); // (800+400)/2 — DNF excluded from time stats
   expect(sune.bestSolve).toBe(2000);
+  expect(sune.meanSolve).toBe(2500); // (2000+3000)/2 — DNF excluded from time stats
   expect(sune.dnfRate).toBeCloseTo(1 / 3);
   expect(sune.misrecRate).toBeCloseTo(1 / 3);
   expect(sune.lastSeen).toBe(300);
   expect(stats.find(s => s.caseId === 'key')!.count).toBe(1);
+  expect('meanRecognition' in sune).toBe(false);
 });
 
 test('sessionSummaries groups and orders by first attempt', () => {

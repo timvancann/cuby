@@ -5,7 +5,7 @@
   import { type Flag } from '../../data/db';
   import { endActiveSession } from '../../data/sessions';
   import { recordAttempt, setAttemptFlag } from '../../data/attempts';
-  import { splits, totalMs } from '../../core/timer/attempt';
+  import { totalMs } from '../../core/timer/attempt';
   import { mulberry32 } from '../../core/rng';
   import { navigate } from '../router.svelte';
   import { newAttempt, retryAttempt, tapZone, type FlowState } from '../train/flow';
@@ -45,7 +45,7 @@
   });
 
   $effect(() => {
-    if (flow?.stage !== 'recognizing' && flow?.stage !== 'solving') return;
+    if (flow?.stage !== 'solving') return;
     let raf = 0;
     const tick = () => { now = Date.now(); raf = requestAnimationFrame(tick); };
     tick();
@@ -162,13 +162,10 @@
     {:else}
     <button class="zone" onpointerdown={onTap}>
       {#if flow.stage === 'scrambled'}
-        <p class="hint">execute, then tap to start recognition</p>
+        <p class="hint">execute, then tap to start solving</p>
         <ScrambleGrid scramble={flow.pick.scramble} perRow={4} />
-      {:else if flow.stage === 'recognizing'}
-        <p class="clock">{fmt(now - flow.timer.startedAt)}</p>
-        <p class="hint">recognizing — tap when you start turning</p>
       {:else if flow.stage === 'solving'}
-        <p class="clock">{fmt(now - flow.timer.boundaries[0])}</p>
+        <p class="clock">{fmt(now - flow.timer.startedAt)}</p>
         <p class="hint">solving — tap when done</p>
       {:else if c}
         <div class="reveal">
@@ -178,10 +175,7 @@
           {#if c.triggers}<p class="dim">{c.triggers}</p>{/if}
           {#if c.notes}<p class="dim note">{c.notes}</p>{/if}
           <div class="splits">
-            {#each splits(flow.timer) as sp}
-              <span>{sp.label} <b>{fmt(sp.ms)}</b></span>
-            {/each}
-            <span>total <b>{fmt(totalMs(flow.timer))}</b></span>
+            <span>solve <b>{fmt(totalMs(flow.timer))}</b></span>
           </div>
           <div class="reveal-scramble">
             <span class="dim slabel">scramble</span>

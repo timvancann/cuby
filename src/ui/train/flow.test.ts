@@ -6,21 +6,16 @@ import { pools } from '../../data/caseSet';
 
 const selected = ['sune', 'anti-sune', 'h'];
 
-test('full attempt: scrambled -> recognizing -> solving -> reveal with correct splits', () => {
+test('full attempt: scrambled -> solving -> reveal with a single solve split', () => {
   const rand = mulberry32(1);
   let s = newAttempt(null, selected, rand);
   expect(s.stage).toBe('scrambled');
   expect(pools[s.pick.caseId]).toContain(s.pick.variant);
   s = tapZone(s, selected, rand, 1000);
-  expect(s.stage).toBe('recognizing');
-  s = tapZone(s, selected, rand, 2100);
   expect(s.stage).toBe('solving');
   s = tapZone(s, selected, rand, 4600);
   expect(s.stage).toBe('reveal');
-  expect(splits(s.timer)).toEqual([
-    { label: 'recognition', ms: 1100 },
-    { label: 'solve', ms: 2500 },
-  ]);
+  expect(splits(s.timer)).toEqual([{ label: 'solve', ms: 3600 }]);
   expect(totalMs(s.timer)).toBe(3600);
 });
 
@@ -28,7 +23,6 @@ test('reveal ignores taps inside the dead-time, advances after it', () => {
   const rand = mulberry32(2);
   let s = newAttempt(null, selected, rand);
   s = tapZone(s, selected, rand, 0);
-  s = tapZone(s, selected, rand, 500);
   s = tapZone(s, selected, rand, 1000); // reveal, revealAt=1000
   const inside = tapZone(s, selected, rand, 1000 + REVEAL_DEAD_MS - 1);
   expect(inside).toBe(s);
@@ -42,7 +36,6 @@ test('retryAttempt re-arms the same scramble with a fresh timer', () => {
   let s = newAttempt(null, selected, rand);
   const pick = s.pick;
   s = tapZone(s, selected, rand, 0);
-  s = tapZone(s, selected, rand, 500);
   s = tapZone(s, selected, rand, 1000); // reveal
   const retried = retryAttempt(s);
   expect(retried.stage).toBe('scrambled');
