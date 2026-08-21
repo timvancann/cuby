@@ -5,7 +5,7 @@ import { f2lSolved, normalizedOllPattern } from '../src/core/cube/pattern';
 import { randomPllState } from '../src/core/cube/pll';
 import { mulberry32 } from '../src/core/rng';
 import { SolverPool } from './solve-pool';
-import { caseState, FACE_TURN, type CasesDb } from './enrich';
+import { caseState, FACE_TURN, stripEndUTurns, type CasesDb } from './enrich';
 
 // --- Why this isn't the brief's straight-line loop ---
 // The brief assumed cubejs's solve(maxDepth) behaves like a normal bounded
@@ -105,7 +105,8 @@ async function main() {
         if (!solution) continue; // already solved (shouldn't happen for LL-scrambled states)
         const moves = solution.split(' ');
         if (moves.length > MAX_HTM || !moves.every((m) => FACE_TURN.test(m))) continue;
-        const scramble = toAlgString(invert(parseAlg(solution)));
+        const scramble = stripEndUTurns(toAlgString(invert(parseAlg(solution))).split(' ')).join(' ');
+        if (!scramble) continue;
         // Self-verify before accepting (this, not the solver, carries the
         // correctness guarantee -- spec section 6.4). cubejs occasionally
         // returns a "solution" that doesn't actually solve the input state

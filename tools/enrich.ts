@@ -12,6 +12,18 @@ export interface CasesDb { version: number; set: string; groups: { id: string; n
 
 export const FACE_TURN = /^[UDLRFB]['2]?$/;
 
+// A U-layer turn at either end of a case scramble only rotates the (solved or
+// finished) top layer, so it never changes which OLL pattern the scramble
+// produces — it just obfuscates the scramble. Solver output never repeats a
+// face, so at most one move per end needs stripping.
+const U_TURN = /^U['2]?$/;
+export function stripEndUTurns(moves: string[]): string[] {
+  const out = [...moves];
+  if (out.length && U_TURN.test(out[0])) out.shift();
+  if (out.length && U_TURN.test(out[out.length - 1])) out.pop();
+  return out;
+}
+
 export function caseState(alg: string) {
   const state = orientYellowUp(applyAlg(solvedCube(), toAlgString(invert(parseAlg(alg)))));
   if (!f2lSolved(state)) throw new Error('alg does not preserve F2L');

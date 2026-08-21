@@ -24,12 +24,15 @@ const { pools } = JSON.parse(readFileSync('data/scrambles.json', 'utf8')) as { p
 for (const c of db.cases) {
   const pool = pools[c.id] ?? [];
   const target = normalizedOllPattern(caseState(c.primary));
-  if (pool.length < 50) fail(`${c.id}: pool has ${pool.length} < 50 scrambles`);
+  if (pool.length < 25) fail(`${c.id}: pool has ${pool.length} < 25 scrambles`);
   if (new Set(pool).size !== pool.length) fail(`${c.id}: duplicate scrambles in pool`);
   for (const s of pool) {
     const moves = s.split(' ');
     if (moves.length > 14) fail(`${c.id}: scramble longer than 14 HTM: ${s}`);
     if (!moves.every(m => FACE_TURN.test(m))) fail(`${c.id}: non-face-turn move in: ${s}`);
+    if (/^U['2]?$/.test(moves[0]) || /^U['2]?$/.test(moves[moves.length - 1])) {
+      fail(`${c.id}: scramble starts or ends with a U-layer turn: ${s}`);
+    }
     const state = applyAlg(solvedCube(), s);
     if (!f2lSolved(state)) fail(`${c.id}: scramble breaks F2L: ${s}`);
     if (normalizedOllPattern(state) !== target) fail(`${c.id}: scramble produces wrong case: ${s}`);

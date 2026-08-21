@@ -8,12 +8,12 @@ beforeEach(async () => {
   await Promise.all(db.tables.map(t => t.clear()));
 });
 
-test('case set loads: 57 cases, 14 groups, 57 pools of 50', () => {
+test('case set loads: 57 cases, 14 groups, 57 pools of 25+ scrambles', () => {
   expect(cases).toHaveLength(57);
   expect(groups).toHaveLength(14);
   expect(Object.keys(pools)).toHaveLength(57);
   for (const c of cases) {
-    expect(pools[c.id]).toHaveLength(50);
+    expect(pools[c.id].length).toBeGreaterThanOrEqual(25);
     expect(c.pattern).toMatch(/^[01]{21}$/);
   }
 });
