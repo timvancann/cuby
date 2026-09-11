@@ -13,6 +13,7 @@
   let phaseError = $state('');
   let triggersOpen = $state(false);
   let notationOpen = $state(false);
+  let pllOpen = $state(false);
   let openTrigger = $state<{ name: string; moves: string } | null>(null);
 
   const NOTATION: { name: string; moves: string }[] = [
@@ -38,6 +39,22 @@
     { name: 'Hedgeslammer', moves: "F R' F' R" },
     { name: 'Lefty sledge', moves: "L F' L' F" },
     { name: 'Lefty hedge', moves: "F' L F L'" },
+  ];
+
+  // 2-look PLL, six algs from cube.academy/2-look-pll-algs. Notes name the triggers inside each.
+  const PLL: { name: string; moves: string; note: string }[] = [
+    { name: 'Headlights (T perm)', moves: "R U R' U' R' F R2 U' R' U' R U R' F'",
+      note: "sexy, R' F R2, then U' R' U' R U R' F'" },
+    { name: 'No headlights (Y perm)', moves: "F R U' R' U' R U R' F' R U R' U' R' F R F'",
+      note: "F R U' R' U', R U R' F', then sexy + sledgehammer" },
+    { name: 'Ua perm', moves: "R2 U' R' U' R U R U R U' R",
+      note: "R2 U' R' U', then R U R U R U' R" },
+    { name: 'Ub perm', moves: "R' U R' U' R' U' R' U R U R2",
+      note: "R' U R' U' R' U', then R' U R U R2 (inverse of Ua)" },
+    { name: 'H perm', moves: "M2 U' M2 U2 M2 U' M2",
+      note: "M2 around U', U2, U'" },
+    { name: 'Z perm', moves: "M' U' M2 U' M2 U' M' U2 M2",
+      note: "M' U', M2 U', M2 U', M' U2 M2, then AUF" },
   ];
 
   function loadSettings() {
@@ -195,6 +212,18 @@
         </button>
       {/each}
     {/if}
+    <button class="row" onclick={() => (pllOpen = !pllOpen)}>
+      <span>2-look PLL</span><span class="dim">{pllOpen ? 'hide' : 'show'}</span>
+    </button>
+    {#if pllOpen}
+      {#each PLL as p}
+        <button class="row trigger pll" onclick={() => (openTrigger = p)}>
+          <span>{p.name}</span>
+          <span class="moves">{p.moves}</span>
+          <span class="note">{p.note}</span>
+        </button>
+      {/each}
+    {/if}
   </section>
   <h2 class="section-title">CFOP phases</h2>
   <section>
@@ -268,6 +297,9 @@
   .row.trigger { padding: 10px 14px; gap: 12px; }
   .moves { font: 600 14px var(--font-mono); color: var(--accent); white-space: nowrap; }
   .notation-name { font-size: 13px; }
+  .row.pll { flex-direction: column; align-items: stretch; gap: 4px; }
+  .row.pll .moves { white-space: normal; }
+  .note { font: 12px var(--font-ui); color: var(--dim); }
   .phase-input {
     flex: 1; font: 13px var(--font-mono); background: var(--bg); color: var(--text); border: 1px solid var(--line);
     border-radius: 4px; padding: 8px 10px; outline: none;
