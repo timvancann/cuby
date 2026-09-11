@@ -3,6 +3,10 @@
   import { parsePhaseLabels } from '../phaseSet';
   import { navigate } from '../router.svelte';
   import TriggerSheet from '../TriggerSheet.svelte';
+  import PllDiagram from '../PllDiagram.svelte';
+  import { solvedCube, applyMoves } from '../../core/cube/model';
+  import { parseAlg, invert } from '../../core/cube/parser';
+  import { ringColors } from '../../core/cube/pattern';
   import { exportAll, validateBackup, importAll, clearHistory, type BackupFile } from '../../data/backup';
 
   let vibration = $state(true);
@@ -56,6 +60,9 @@
     { name: 'Z perm', moves: "M' U' M2 U' M2 U' M' U2 M2",
       note: "M' U', M2 U', M2 U', M' U2 M2, then AUF" },
   ];
+
+  // The state each alg solves from: inverse-apply it to a solved cube.
+  const pllRing = (moves: string) => ringColors(applyMoves(solvedCube(), invert(parseAlg(moves))));
 
   function loadSettings() {
     getSetting('vibration', true).then(v => { vibration = v; });
@@ -218,9 +225,12 @@
     {#if pllOpen}
       {#each PLL as p}
         <button class="row trigger pll" onclick={() => (openTrigger = p)}>
-          <span>{p.name}</span>
-          <span class="moves">{p.moves}</span>
-          <span class="note">{p.note}</span>
+          <PllDiagram ring={pllRing(p.moves)} size={64} />
+          <span class="pll-text">
+            <span>{p.name}</span>
+            <span class="moves">{p.moves}</span>
+            <span class="note">{p.note}</span>
+          </span>
         </button>
       {/each}
     {/if}
@@ -297,7 +307,8 @@
   .row.trigger { padding: 10px 14px; gap: 12px; }
   .moves { font: 600 14px var(--font-mono); color: var(--accent); white-space: nowrap; }
   .notation-name { font-size: 13px; }
-  .row.pll { flex-direction: column; align-items: stretch; gap: 4px; }
+  .row.pll { justify-content: flex-start; align-items: center; gap: 12px; }
+  .pll-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   .row.pll .moves { white-space: normal; }
   .note { font: 12px var(--font-ui); color: var(--dim); }
   .phase-input {

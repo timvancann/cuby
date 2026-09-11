@@ -12,6 +12,11 @@ export function ollPattern(c: Cube): string {
   return s;
 }
 
+/** Face index of each top-ring side sticker, in RING order (F, R, B, L rows). */
+export function ringColors(c: Cube): number[] {
+  return RING.map(i => c[i]);
+}
+
 export function normalizedOllPattern(c: Cube): string {
   let cur = c, best = ollPattern(c);
   for (let k = 0; k < 3; k++) {

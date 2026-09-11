@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { diagramLayout } from './diagram';
+import { diagramLayout, pllDiagramLayout } from './diagram';
 
 const SOLVED = '111111111' + '000000000000';
 
@@ -31,4 +31,14 @@ test('ring bars land on the right edges', () => {
 
 test('bad input renders empty, not a crash', () => {
   expect(diagramLayout('101')).toEqual({ grid: [], bars: [] });
+});
+
+test('pllDiagramLayout places twelve coloured bars in ring order', () => {
+  const bars = pllDiagramLayout([2, 2, 2, 1, 1, 1, 5, 5, 5, 4, 4, 4]);
+  expect(bars).toHaveLength(12);
+  expect(bars[0]).toMatchObject({ x: 9, y: 90, face: 2 });    // F0 bottom-left
+  expect(bars[3]).toMatchObject({ x: 90, y: 62, face: 1 });   // R0 right edge, bottom
+  expect(bars[6]).toMatchObject({ x: 62, y: 0, face: 5 });    // B0 top edge, right
+  expect(bars[9]).toMatchObject({ x: 0, y: 9, face: 4 });     // L0 left edge, top
+  expect(pllDiagramLayout([1, 2])).toEqual([]);
 });

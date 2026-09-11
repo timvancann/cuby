@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { ollPattern, normalizedOllPattern, f2lSolved, orientYellowUp } from './pattern';
+import { ringColors, ollPattern, normalizedOllPattern, f2lSolved, orientYellowUp } from './pattern';
 import { solvedCube, U } from './model';
 import { applyAlg, invert, parseAlg, toAlgString } from './parser';
 
@@ -32,4 +32,11 @@ test('f2lSolved is false after R, true after y rotation of solved', () => {
 test('orientYellowUp undoes a net rotation', () => {
   const c = applyAlg(solvedCube(), 'x z2');
   expect(orientYellowUp(c)[4]).toBe(U); // U center is U-colored again
+});
+
+test('ringColors: solved ring is F R B L, and U cycles the ring', () => {
+  const s = solvedCube();
+  expect(ringColors(s)).toEqual([2, 2, 2, 1, 1, 1, 5, 5, 5, 4, 4, 4]);
+  // after U the front row shows the old right face's colour
+  expect(ringColors(applyAlg(s, 'U')).slice(0, 3)).toEqual([1, 1, 1]);
 });
