@@ -1,8 +1,17 @@
 import { expect, test } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { enrichCases, stripEndUTurns, type CasesDb } from './enrich';
+import { enrichCases, knownAlgCheck, stripEndUTurns, type CasesDb } from './enrich';
 
 const db: CasesDb = JSON.parse(readFileSync('data/cases.json', 'utf8'));
+
+test('knownAlgCheck flags a known alg, its inverse, and scrambles containing one', () => {
+  const givesAway = knownAlgCheck(db);
+  const sune = "R U R' U R U2 R'"; // Sune, U-stripped: R U R' U R U2 R'
+  expect(givesAway(sune)).toBe(true);
+  expect(givesAway("R U2 R' U' R U' R'")).toBe(true); // inverse
+  expect(givesAway(`F2 D ${sune} B2`)).toBe(true); // contains it
+  expect(givesAway("F2 D R2 B' L2 U F' R D2 B")).toBe(false);
+});
 
 test('enrichment assigns a distinct number and pattern to all 57 cases', () => {
   const out = enrichCases(db);

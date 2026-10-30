@@ -22,8 +22,8 @@ Terms used consistently throughout this spec and the codebase:
 - **Case** — one of the 57 OLL states, identified by canonical number (1–57) and PDF name, belonging to exactly one **Group**. A case's identity is its top-layer *orientation pattern* (which of the 8 LL pieces have yellow facing up, and where the yellow stickers of the misoriented ones point). Recognition is rotation-dependent in appearance but the case is AUF-invariant: the same case seen at 4 possible angles.
 - **Algorithm** — an ordered move sequence in standard notation (face, wide, slice, rotation moves; primes; doubles) that solves a case. Each case has a default primary and optional secondary algorithm, plus trigger shorthand and notes. Exactly one algorithm per case is *active* (default: primary; user-overridable).
 - **Scramble** — a move sequence that, applied to a solved cube held yellow-up, produces a chosen case with a randomized LL permutation and randomized AUF, leaving F2L intact.
-- **Attempt** — one timed unit. Common fields: mode, timestamps, total duration, flag (`ok` / `misrecognized` / `dnf`), and mode-specific fields: case id + scramble + a single solve split (case training; attempts recorded before 2026-08 also carry a recognition split); ordered named phase splits (CFOP timer); nothing extra (full solve).
-- **Session** — a run of consecutive attempts in one mode with one configuration (the selected case subset for case training; the phase set for the CFOP timer). Attempts always belong to a session; a session records its configuration snapshot so history stays interpretable after the selection changes.
+- **Attempt** — one timed unit. Common fields: mode, timestamps, total duration, flag (`ok` / `misrecognized` / `dnf`), and mode-specific fields: case id + scramble + a single solve split (case training; attempts recorded before 2026-08 also carry a recognition split); ordered named phase splits (CFOP timer); nothing extra (full solve); case id + scramble + a single recognition split (dry practice, recorded since 2026-10). A case attempt that re-runs the previous scramble ("retry") is tagged `retry` and kept in history but left out of all stats, because the case was already known.
+- **Session** — a run of consecutive attempts in one mode with one configuration (the selected case subset for case training; the phase set for the CFOP timer). Attempts always belong to a session; a session records its configuration snapshot so history stays interpretable after the selection changes. Switching tabs does not end a session; a mode or configuration change, 30 minutes idle, or closing the app does. Leaving a screen while a solve is being timed discards that solve.
 - **Phase set** — a user-editable named list of phase labels for the CFOP timer (default: Cross, F2L, OLL, PLL).
 - **Timer event** — a timestamped signal (`tap`) consumed by the timer core to advance the attempt state machine. V1 has one event source (screen taps); the interface is designed so a future smart-cube source can emit equivalent events (first-turn-detected, solved-detected).
 
@@ -79,7 +79,7 @@ All modes record attempts into the same local store with a mode discriminator.
 
 - For each of the 57 cases, a generator script (repo tooling, run offline — not app code) produces **N ≥ 25 distinct scrambles** and writes them to `scrambles.json`, keyed by case id. (The generator targets 50 before stripping the redundant leading/trailing U-layer turns, which only rotate the solved or finished top layer; stripping can collapse near-duplicates, so committed pools land between 25 and 50.)
 - Each pool entry is generated from a random target state in the case's family: F2L solved, top-layer orientation = the case, LL permutation drawn uniformly at random, random AUF. The state is then solved near-optimally and the inverse solution is stored as the scramble.
-- Length budget: **≤ 14 HTM** per scramble (LL-only states are optimally solvable well within this). Short scrambles are a feature: less execution surface, fewer botched setups.
+- Length budget: **10 to 14 HTM** per scramble, after stripping end U turns (LL-only states are optimally solvable well within this). Short scrambles are a feature: less execution surface, fewer botched setups. Below 10 moves, or when a scramble is literally one of the set's face-turn algs (forwards or inverted), it gives the case away to anyone who knows the algs, so those are rejected (generator and verifier both check).
 - Generator tooling (decided): `cubejs`, a pure-JS Kociemba two-phase solver, as a tools-only devDependency — no binaries, CI-friendly. Solutions over the length budget are rejected and resampled. (A custom IDA* was considered and dropped: near-optimal depth-14 search needs Korf-style pattern databases, a solver subproject in its own right.) The acceptance criteria below hold regardless of tooling; the CI verifier, not the solver, carries correctness (§6.4).
 - **CI verification (mandatory):** every pool scramble is simulated with the app's own cube model and must (a) leave F2L solved, (b) produce exactly its case's orientation pattern up to AUF, (c) be unique within its pool. The pipeline fails otherwise. Scrambles use face turns only (no wide/slice/rotations) so they're unambiguous to execute quickly.
 
@@ -99,7 +99,7 @@ All modes record attempts into the same local store with a mode discriminator.
 
 - IndexedDB via **Dexie**. No backend, no accounts, no telemetry. Tables:
   - `sessions` — id, mode, startedAt, configSnapshot (selected case ids | phase set)
-  - `attempts` — id, sessionId, mode, caseId?, scramble?, startedAt, splits (ordered {label, ms}), totalMs, flag (`ok`/`misrecognized`/`dnf`)
+  - `attempts` — id, sessionId, mode (`case`/`dry`/`full`/`cfop`), caseId?, scramble?, startedAt, splits (ordered {label, ms}), totalMs, flag (`ok`/`misrecognized`/`dnf`), retry?
   - `algOverrides` — caseId, moves, updatedAt
   - `settings` — key/value (case selection, active phase set, preferences)
 - On first run, request `navigator.storage.persist()`; show the granted/denied result and current usage estimate in Settings.
@@ -112,9 +112,9 @@ All modes record attempts into the same local store with a mode discriminator.
 
 ### 5.3 Stats
 
-- **Per case**: attempt count, best/mean solve, DNF rate, misrecognition rate, last-seen date. Sortable — "worst solve" and "least practiced" orderings are the v1 (read-only) precursor of adaptive scheduling.
-- **Per session**: attempt list with splits, session means.
-- **Per mode, global**: current/best ao5, ao12, ao50, ao100 and lifetime mean (mirroring the "Last avg of" table in the reference timer app). aoN trims the best and worst 5% (at least one each side, csTimer-style, mirroring the reference timer app); DNFs count as worst; the average is DNF when DNFs exceed the trim.
+- **Per case** (case training and dry practice): attempt count, recent solve (mean of the last 5 clean attempts, the default sort) with the all-time mean under it, DNF rate, misrecognition rate, last-seen date. Times only use OK attempts: a misrecognized attempt timed a different alg. Selected cases never practiced are listed with n = 0. Sortable — "worst solve" and "least practiced" orderings are the v1 (read-only) precursor of adaptive scheduling.
+- **Per session**: attempt list with splits, session means. An attempt's flag can be changed afterwards from this list (no deletion, see §5.2).
+- **Per mode, global**: single (latest/best), current/best ao5, ao12, ao50, ao100 and lifetime mean (mirroring the "Last avg of" table in the reference timer app). aoN trims the best and worst 5% (at least one each side, csTimer-style, mirroring the reference timer app); DNFs count as worst; the average is DNF when DNFs exceed the trim. In case and dry modes a misrecognized attempt counts as a DNF. Full averages over full and CFOP solves together (every CFOP solve is a full solve); CFOP adds a per-phase table (mean, ao5, ao12, best). The Timer screen shows live mo3/ao5/ao12 and the last five times.
 - Charts are v1-minimal: a session-over-session trend line (a per-case recognition-vs-solve bar chart existed while the recognition split did). Everything else is roadmap.
 
 ## 6. Tech Stack & Architecture
@@ -168,7 +168,7 @@ The design driver for Train and Timer:
 - The tap zone is the entire screen minus a slim top status strip and the abort control; every state advance is "tap anywhere", so thumb reach is irrelevant by construction.
 - The scramble is readable at arm's length with the phone flat on a desk.
 - Abort is small, in a top corner, outside natural tap paths, and needs no confirmation (nothing is recorded on abort).
-- The reveal screen puts the flag buttons (OK / misrecognized / DNF) and "next" in the bottom third, thumb territory. Tapping anywhere else advances to the next attempt with flag OK, keeping the fast path "tap, tap, tap". A short dead-time (~300 ms) after the solve-ending tap prevents an accidental double tap from skipping the reveal.
+- The reveal screen puts the flag buttons (OK / misrecognized / DNF) and "next" in the bottom third, thumb territory. Tapping anywhere else advances to the next attempt with flag OK, keeping the fast path "tap, tap, tap". A short dead-time (~300 ms) after the solve-ending tap prevents an accidental double tap from skipping the reveal, and a stop tap within 300 ms of the start (or of the previous CFOP phase) is ignored for the same reason. A tap resolves on release and only if the finger moved less than 10 px, so the reveal can scroll and the cube can be rotated; it is timed from the moment of touch. The tab bar hides while a solve is timed.
 - Wake lock is held while Train or Timer is foregrounded; optional haptic tick on each state advance.
 
 ### 7.4 Screens

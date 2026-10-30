@@ -1,12 +1,15 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
+  import { slide } from 'svelte/transition';
   import { splits, totalMs } from '../../core/timer/attempt';
-  import { recordAttempt, setAttemptFlag } from '../../data/attempts';
-  import { endActiveSession } from '../../data/sessions';
-  import { DEFAULT_PHASES, getPhaseSet, getSetting } from '../../data/settings';
-  import type { Flag } from '../../data/db';
+  import { aoN, moN } from '../../core/stats/wca';
+  import { timedResults } from '../../core/stats/aggregate';
+  import { attemptsForModes, recordAttempt, setAttemptFlag } from '../../data/attempts';
+  import { DEFAULT_PHASES, getPhaseSet, getSetting, setSetting } from '../../data/settings';
+  import type { AttemptRow, Flag } from '../../data/db';
   import { acquireWakeLock, releaseWakeLock } from '../wakeLock';
   import { nextFullScramble, warmUp } from '../timer/scrambles';
-  import { abortTimer, newTimerAttempt, tapTimer, type TimerFlow } from '../timer/flow';
+  import { abortTimer, newTimerAttempt, tapTimer } from '../timer/flow';
   import { invert, parseAlg, toAlgString } from '../../core/cube/parser';
   import TriggerSheet from '../TriggerSheet.svelte';
   import CubeAnimator from '../animator/CubeAnimator.svelte';
@@ -14,124 +17,145 @@
   import ScrambleGrid from '../ScrambleGrid.svelte';
   import { drillKeys } from '../keys';
   import SegmentedControl from '../SegmentedControl.svelte';
+  import { bumpCount, sessionCount, timer as t } from '../drillState.svelte';
+  import { fmtMs, fmtTime } from '../format';
+  import { clockNow, slopTap } from '../tap';
+  import { MOTION } from '../motion';
 
-  let mode = $state<'full' | 'cfop'>('full');
   let cfopPhases = $state<string[]>(DEFAULT_PHASES);
-  let scramble = $state<string | null>(null);
   let scrambleError = $state(false);
-  let flow = $state<TimerFlow>(newTimerAttempt(['solve']));
-  let attemptId = $state<number | null>(null);
-  let flag = $state<Flag>('ok');
   let now = $state(0);
   let vibration = $state(true);
-  let sessionCount = $state(0);
+  let solves = $state.raw<AttemptRow[]>([]); // full + cfop solves, for the live averages
 
-  const phases = $derived(mode === 'cfop' ? cfopPhases : ['solve']);
+  const phases = $derived(t.mode === 'cfop' ? cfopPhases : ['solve']);
+  const flow = $derived(t.flow ?? newTimerAttempt(phases));
 
   // CubeAnimator inverts its setup, so pass the scramble's inverse to show
   // the scrambled state (same trick as dry practice).
   const setupFor = (s: string) => toAlgString(invert(parseAlg(s)));
 
-  let upcoming = $state<string | null>(null);
-
   // Elapsed in the phase currently running, for the live segment.
   const liveMs = $derived(
-    flow.stage === 'running'
-      ? now - (flow.timer.boundaries.length ? flow.timer.boundaries[flow.timer.boundaries.length - 1] : flow.timer.startedAt)
-      : 0,
+    flow.stage === 'running' ? now - (flow.timer.boundaries.at(-1) ?? flow.timer.startedAt) : 0,
   );
 
   function loadScramble() {
     scrambleError = false;
-    nextFullScramble().then(s => { scramble = s; }).catch(() => { scrambleError = true; });
+    nextFullScramble().then(s => { t.scramble = s; }).catch(() => { scrambleError = true; });
   }
 
-  $effect(() => {
+  $effect(() => untrack(() => {
     void acquireWakeLock();
     warmUp();
-    getPhaseSet().then(p => {
+    Promise.all([getSetting<'full' | 'cfop'>('timerMode', 'full'), getPhaseSet()]).then(([m, p]) => {
       cfopPhases = p;
-      if (mode === 'cfop' && flow.stage === 'idle') flow = newTimerAttempt(p);
+      if (t.flow && t.flow.stage !== 'idle') return; // mid-attempt: keep what's on screen
+      t.mode = m;
+      t.flow = newTimerAttempt(m === 'cfop' ? p : ['solve']);
     });
     getSetting('vibration', true).then(v => { vibration = v; });
-    loadScramble();
+    attemptsForModes(['full', 'cfop']).then(rows => { solves = rows; });
+    if (!t.scramble) loadScramble();
     return () => {
       void releaseWakeLock();
-      void endActiveSession(Date.now());
+      // Leaving mid-solve discards it: the clock would keep running otherwise.
+      if (t.flow?.stage === 'running') t.flow = abortTimer(t.flow, phases);
     };
-  });
+  }));
 
   $effect(() => {
     if (flow.stage !== 'running') return;
     let raf = 0;
-    const tick = () => { now = Date.now(); raf = requestAnimationFrame(tick); };
+    const tick = () => { now = clockNow(); raf = requestAnimationFrame(tick); };
     tick();
     return () => cancelAnimationFrame(raf);
   });
 
-  function fmt(ms: number): string {
-    return (ms / 1000).toFixed(2);
+  function promoteUpcoming() {
+    // The upcoming scramble was prefetched when the result appeared.
+    if (t.upcoming) {
+      t.scramble = t.upcoming;
+      t.upcoming = null;
+    } else {
+      t.scramble = null;
+      loadScramble();
+    }
   }
 
   function setMode(m: 'full' | 'cfop') {
     if (flow.stage === 'running') return;
-    mode = m;
-    flow = newTimerAttempt(m === 'cfop' ? cfopPhases : ['solve']);
-    attemptId = null;
+    if (flow.stage === 'done') promoteUpcoming(); // the shown scramble was already solved
+    t.mode = m;
+    void setSetting('timerMode', m);
+    t.flow = newTimerAttempt(m === 'cfop' ? cfopPhases : ['solve']);
+    t.attemptId = null;
   }
 
-  async function onTap() {
+  async function onTap(at: number) {
     if (scrambleError) { loadScramble(); return; }
-    if (!scramble) return;
-    const t = Date.now();
-    now = t;
-    const next = tapTimer(flow, t);
+    if (!t.scramble) return;
+    now = at;
+    const next = tapTimer(flow, at);
     if (next === flow) return;
     if (vibration && 'vibrate' in navigator) navigator.vibrate(10);
     if (next === 'next') {
-      // The upcoming scramble was prefetched when the result appeared.
-      if (upcoming) {
-        scramble = upcoming;
-        upcoming = null;
-      } else {
-        scramble = null;
-        loadScramble();
-      }
-      flow = newTimerAttempt(phases);
-      attemptId = null;
+      promoteUpcoming();
+      t.flow = newTimerAttempt(phases);
+      t.attemptId = null;
       return;
     }
-    flow = next;
+    t.flow = next;
     if (next.stage === 'done') {
-      flag = 'ok';
-      attemptId = null;
-      upcoming = null;
-      nextFullScramble().then(s => { upcoming = s; }).catch(() => {});
+      t.flag = 'ok';
+      t.attemptId = null;
+      t.upcoming = null;
+      nextFullScramble().then(s => { t.upcoming = s; }).catch(() => {});
+      const mode = t.mode;
       const id = await recordAttempt({
-        mode, config: mode === 'cfop' ? cfopPhases : [], now: t,
-        timer: next.timer, scramble,
+        mode, config: mode === 'cfop' ? cfopPhases : [], now: Date.now(),
+        timer: next.timer, scramble: t.scramble ?? undefined,
       });
-      attemptId = id;
-      sessionCount += 1;
-      if (flag !== 'ok') await setAttemptFlag(id, flag);
+      t.attemptId = id;
+      bumpCount(t.count, Date.now());
+      if (t.flag !== 'ok') await setAttemptFlag(id, t.flag);
+      solves = [...solves, {
+        id, sessionId: 0, mode, startedAt: next.timer.startedAt,
+        splits: splits(next.timer), totalMs: totalMs(next.timer), flag: t.flag,
+      }];
     }
   }
 
   function abort() {
     if (flow.stage !== 'running') return;
-    flow = abortTimer(flow, phases);
+    t.flow = abortTimer(flow, phases);
   }
 
   async function chooseFlag(f: Flag) {
-    flag = f;
-    if (attemptId !== null) await setAttemptFlag(attemptId, f);
+    t.flag = f;
+    const id = t.attemptId;
+    if (id === null) return;
+    solves = solves.map(r => (r.id === id ? { ...r, flag: f } : r));
+    await setAttemptFlag(id, f);
   }
 
+  // Same pools as the Stats tab: Full averages every solve (a CFOP solve is a
+  // full solve too), CFOP only the CFOP ones.
+  const modeSolves = $derived(t.mode === 'cfop' ? solves.filter(r => r.mode === 'cfop') : solves);
+  const results = $derived(timedResults(modeSolves));
+  const live = $derived([
+    { label: 'mo3', v: moN(results, 3) },
+    { label: 'ao5', v: aoN(results, 5) },
+    { label: 'ao12', v: aoN(results, 12) },
+  ]);
+  const recent = $derived(modeSolves.slice(-5).reverse());
+
   let showScramble = $state(false);
+  const tap = slopTap(at => void onTap(at));
 
   $effect(() =>
     drillKeys({
-      onSpace: () => void onTap(),
+      onSpace: () => void onTap(clockNow()),
       onEscape: abort,
       enabled: () => !showScramble,
     }),
@@ -143,104 +167,124 @@
     <div class="mode-wrap">
       <SegmentedControl
         options={[{ value: 'full', label: 'Full' }, { value: 'cfop', label: 'CFOP' }]}
-        value={mode}
+        value={t.mode}
         disabled={flow.stage === 'running'}
         onChange={v => setMode(v as 'full' | 'cfop')}
       />
     </div>
-    <span class="dim">{sessionCount} this session</span>
-    {#if flow.stage === 'idle' && scramble}
-      <button class="abort" onclick={() => (showScramble = true)}>animate</button>
+    {#if flow.stage === 'running'}
+      <button class="ghost" onclick={abort}>Abort</button>
+    {:else if flow.stage === 'idle' && t.scramble}
+      <button class="ghost" onclick={() => (showScramble = true)}>Animate</button>
     {/if}
-    <button class="abort" onclick={abort}>abort</button>
   </header>
 
-  <button class="zone" onpointerdown={onTap}>
-    {#if flow.stage === 'idle'}
-      {#if scrambleError}
-        <p class="hint">couldn't generate a scramble — tap to retry</p>
-      {:else if scramble}
-        <p class="clock idle">0.00</p>
-        <ScrambleGrid {scramble} />
-        <div class="cube" role="presentation" onpointerdown={e => e.stopPropagation()}>
-          {#key scramble}
-            <CubeAnimator alg="" setup={setupFor(scramble)} controls={false} size={185} />
+  <div class="zone" role="button" tabindex="-1" {...tap}>
+    <div class="zone-inner">
+      {#if flow.stage === 'idle'}
+        {#if scrambleError}
+          <p class="hint">couldn't generate a scramble, tap to retry</p>
+        {:else if t.scramble}
+          <p class="clock idle">0.00</p>
+          <ScrambleGrid scramble={t.scramble} />
+          {#key t.scramble}
+            <CubeAnimator alg="" setup={setupFor(t.scramble)} controls={false} size={170} scheme="white-top" />
           {/key}
-        </div>
-        <p class="hint">tap to start</p>
+          <p class="hint">white on top, green in front. Tap to start</p>
+        {:else}
+          <p class="hint">generating scramble…</p>
+        {/if}
+      {:else if flow.stage === 'running'}
+        <p class="clock">{fmtMs(Math.max(0, now - flow.timer.startedAt))}</p>
+        {#if t.mode === 'cfop'}
+          <PhaseBar {phases} splits={splits(flow.timer)} {liveMs} />
+        {:else}
+          <p class="hint">tap to stop</p>
+        {/if}
       {:else}
-        <p class="hint">generating scramble…</p>
-      {/if}
-    {:else if flow.stage === 'running'}
-      <p class="clock">{fmt(now - flow.timer.startedAt)}</p>
-      {#if mode === 'cfop'}
-        <PhaseBar {phases} splits={splits(flow.timer)} {liveMs} />
-      {:else}
-        <p class="hint">tap to stop</p>
-      {/if}
-    {:else}
-      <p class="clock final">{fmt(totalMs(flow.timer))}</p>
-      {#if mode === 'cfop'}
-        <PhaseBar {phases} splits={splits(flow.timer)} />
-      {/if}
-      {#if upcoming}
-        <div class="next-up">
-          <p class="hint">next scramble</p>
-          <ScrambleGrid scramble={upcoming} small />
-          <div class="cube" role="presentation" onpointerdown={e => e.stopPropagation()}>
-            {#key upcoming}
-              <CubeAnimator alg="" setup={setupFor(upcoming)} controls={false} size={140} />
+        <p class="clock final">{fmtMs(totalMs(flow.timer))}</p>
+        {#if t.mode === 'cfop'}
+          <PhaseBar {phases} splits={splits(flow.timer)} />
+        {/if}
+        {#if t.upcoming}
+          <div class="next-up">
+            <span class="section-label">next scramble</span>
+            <ScrambleGrid scramble={t.upcoming} small />
+            {#key t.upcoming}
+              <CubeAnimator alg="" setup={setupFor(t.upcoming)} controls={false} size={140} scheme="white-top" />
             {/key}
           </div>
-        </div>
+        {/if}
       {/if}
-    {/if}
-  </button>
+    </div>
+  </div>
+
+  {#if flow.stage !== 'running'}
+    <div class="live" transition:slide={MOTION}>
+      <p class="pool section-label">{t.mode === 'cfop' ? 'CFOP solves' : 'all solves, CFOP included'}</p>
+      <div class="avgs">
+        {#each live as a}
+          <span><span class="section-label">{a.label}</span><b>{fmtTime(a.v)}</b></span>
+        {/each}
+      </div>
+      <p class="recent dim">
+        {sessionCount(t.count, Date.now())} this session{#if recent.length}: {#each recent as r, i}<span class:dnf={r.flag !== 'ok'}>{r.flag === 'dnf' ? 'DNF' : fmtMs(r.totalMs)}</span>{i < recent.length - 1 ? ', ' : ''}{/each}{/if}
+      </p>
+    </div>
+  {/if}
 
   {#if flow.stage === 'done'}
-    <footer>
-      <div class="flags">
-        <button class:on={flag === 'ok'} onclick={() => chooseFlag('ok')}>OK</button>
-        <button class:on={flag === 'dnf'} onclick={() => chooseFlag('dnf')}>DNF</button>
+    <footer transition:slide={MOTION}>
+      <div class="flags" role="group" aria-label="flag this solve">
+        <button aria-pressed={t.flag === 'ok'} class:on={t.flag === 'ok'} onclick={() => chooseFlag('ok')}>OK</button>
+        <button aria-pressed={t.flag === 'dnf'} class:on={t.flag === 'dnf'} onclick={() => chooseFlag('dnf')}>DNF</button>
       </div>
-      <button class="primary" onpointerdown={onTap}>Next</button>
+      <button class="primary" onclick={() => void onTap(clockNow())}>Next</button>
     </footer>
   {/if}
 </div>
 
-{#if showScramble && scramble}
-  <TriggerSheet name="Scramble" moves={scramble} onClose={() => (showScramble = false)} />
+{#if showScramble && t.scramble}
+  <TriggerSheet name="Scramble" moves={t.scramble} scheme="white-top" onClose={() => (showScramble = false)} />
 {/if}
 
 <style>
-  .timer { display: flex; flex-direction: column; }
+  .timer { display: flex; flex-direction: column; height: 100dvh; min-height: 0; }
   header { display: flex; align-items: center; gap: 10px; }
-  .mode-wrap { min-width: 150px; }
-  header .dim { margin-left: auto; font-size: 12px; }
-  .abort {
+  .mode-wrap { flex: 1; min-width: 0; max-width: 220px; }
+  header .ghost { margin-left: auto; }
+  .ghost {
+    min-height: var(--tap); padding: 0 14px; white-space: nowrap;
     background: none; border: 1px solid var(--line); border-radius: var(--radius);
-    color: var(--dim); font: 500 14px var(--font-ui); padding: 0 16px; min-height: 44px; cursor: pointer;
+    color: var(--dim); font: 500 var(--fs-button) var(--font-ui); cursor: pointer;
   }
   .zone {
-    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 14px; background: none; border: 0; color: var(--text); cursor: pointer;
-    -webkit-tap-highlight-color: transparent; touch-action: manipulation; user-select: none;
+    flex: 1; min-height: 0; overflow: hidden auto; display: flex; flex-direction: column;
+    color: var(--text); cursor: pointer; outline: none;
+    -webkit-tap-highlight-color: transparent; touch-action: pan-y; user-select: none;
   }
-  .cube { display: flex; justify-content: center; }
-  .next-up { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 6px; }
-  .hint { color: var(--dim); font-size: 13px; }
+  .zone-inner { margin: auto 0; padding: 12px 0; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .next-up { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 6px; }
+  .hint { color: var(--dim); font-size: var(--fs-small); text-align: center; }
   .clock { font: 600 64px var(--font-mono); font-variant-numeric: tabular-nums; }
   .clock.idle { color: var(--dim); font-size: 48px; }
   .clock.final { color: var(--accent); }
-  footer { display: grid; gap: 10px; padding-bottom: 8px; }
+  .live { flex: none; display: grid; gap: 4px; padding: 8px 0 4px; border-top: 1px solid var(--line); }
+  .pool { text-align: center; }
+  .avgs { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .avgs > span { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .avgs b { font: 600 17px var(--font-mono); font-variant-numeric: tabular-nums; }
+  .recent { font: 400 var(--fs-caption) var(--font-mono); text-align: center; }
+  .recent .dnf { color: var(--bad); }
+  footer { flex: none; display: grid; gap: 8px; padding: 8px 0; }
   .flags { display: flex; gap: 8px; }
   .flags button {
-    flex: 1; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
-    color: var(--dim); font: 500 13px var(--font-ui); padding: 10px 0; cursor: pointer;
+    flex: 1; min-height: var(--tap); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    color: var(--dim); font: 500 var(--fs-button) var(--font-ui); cursor: pointer;
   }
-  .flags button.on { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+  .flags button.on { color: var(--accent); background: var(--panel-2); border-color: var(--accent); font-weight: 600; }
   .primary {
-    background: var(--accent); color: var(--accent-ink); border: 0; border-radius: var(--radius);
-    font: 700 15px var(--font-ui); padding: 14px 0; cursor: pointer;
+    min-height: 48px; background: var(--accent); color: var(--accent-ink); border: 0; border-radius: var(--radius);
+    font: 700 var(--fs-body) var(--font-ui); cursor: pointer;
   }
 </style>

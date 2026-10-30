@@ -1,13 +1,14 @@
 import Dexie, { type EntityTable } from 'dexie';
 import type { Split } from '../core/timer/attempt';
 
-export type Mode = 'case' | 'full' | 'cfop';
+export type Mode = 'case' | 'dry' | 'full' | 'cfop';
 export type Flag = 'ok' | 'misrecognized' | 'dnf';
 
 export interface SessionRow { id?: number; mode: Mode; startedAt: number; endedAt?: number; configSnapshot: string[] }
 export interface AttemptRow {
   id?: number; sessionId: number; mode: Mode; caseId?: string; scramble?: string;
   startedAt: number; splits: Split[]; totalMs: number; flag: Flag;
+  retry?: boolean; // same scramble as the attempt before it; kept in history, left out of stats
 }
 export interface AlgOverrideRow { caseId: string; moves: string; updatedAt: number }
 export interface SettingRow { key: string; value: unknown }

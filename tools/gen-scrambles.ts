@@ -5,7 +5,7 @@ import { f2lSolved, normalizedOllPattern } from '../src/core/cube/pattern';
 import { randomPllState } from '../src/core/cube/pll';
 import { mulberry32 } from '../src/core/rng';
 import { SolverPool } from './solve-pool';
-import { caseState, FACE_TURN, stripEndUTurns, type CasesDb } from './enrich';
+import { caseState, FACE_TURN, knownAlgCheck, MIN_HTM, stripEndUTurns, type CasesDb } from './enrich';
 
 // --- Why this isn't the brief's straight-line loop ---
 // The brief assumed cubejs's solve(maxDepth) behaves like a normal bounded
@@ -68,6 +68,7 @@ async function main() {
   const pool = new SolverPool(WORKERS);
   const rand = mulberry32(SEED);
   const pools: Record<string, string[]> = {};
+  const givesAway = knownAlgCheck(db);
 
   for (const c of db.cases) {
     const targetPattern = normalizedOllPattern(caseState(c.primary));
@@ -106,7 +107,8 @@ async function main() {
         const moves = solution.split(' ');
         if (moves.length > MAX_HTM || !moves.every((m) => FACE_TURN.test(m))) continue;
         const scramble = stripEndUTurns(toAlgString(invert(parseAlg(solution))).split(' ')).join(' ');
-        if (!scramble) continue;
+        // Too short, or literally an OLL alg: a cuber reads the case off it.
+        if (scramble.split(' ').length < MIN_HTM || givesAway(scramble)) continue;
         // Self-verify before accepting (this, not the solver, carries the
         // correctness guarantee -- spec section 6.4). cubejs occasionally
         // returns a "solution" that doesn't actually solve the input state

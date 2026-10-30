@@ -11,6 +11,7 @@
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "gen:cases": "tsx tools/gen-cases.ts",
     "gen:scrambles": "tsx tools/gen-scrambles.ts",
+    "prune:scrambles": "tsx tools/prune-scrambles.ts",
     "verify": "tsx tools/verify.ts"
   },
   "devDependencies": {

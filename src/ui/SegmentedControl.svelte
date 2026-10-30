@@ -12,7 +12,7 @@
 <div class="seg" role="group" style="--n: {options.length}; --i: {idx}">
   <div class="thumb"></div>
   {#each options as o}
-    <button class:on={o.value === value} {disabled} onclick={() => onChange(o.value)}>{o.label}</button>
+    <button aria-pressed={o.value === value} class:on={o.value === value} {disabled} onclick={() => onChange(o.value)}>{o.label}</button>
   {/each}
 </div>
 
@@ -36,7 +36,7 @@
     background: var(--panel-2);
     border-radius: 9px;
     box-shadow: inset 0 0 0 1px #343a45;
-    transition: transform 200ms cubic-bezier(0.3, 0.7, 0.4, 1);
+    transition: transform var(--motion) var(--ease);
   }
   button {
     position: relative;
@@ -44,8 +44,9 @@
     background: none;
     border: 0;
     color: var(--dim);
-    font: 600 14px var(--font-ui);
-    min-height: 40px;
+    font: 600 var(--fs-button) var(--font-ui);
+    min-height: var(--tap);
+    white-space: nowrap;
     cursor: pointer;
     transition: color 150ms;
   }

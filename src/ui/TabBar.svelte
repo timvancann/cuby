@@ -1,18 +1,28 @@
 <script lang="ts">
   import { currentRoute, navigate, type Route } from './router.svelte';
-  const tabs: { path: Route; label: string }[] = [
-    { path: '/train', label: 'Train' },
-    { path: '/timer', label: 'Timer' },
-    { path: '/cases', label: 'Cases' },
-    { path: '/stats', label: 'Stats' },
-    { path: '/settings', label: 'Settings' },
+  import Icon, { type IconName } from './Icon.svelte';
+  import { solveInProgress } from './drillState.svelte';
+
+  const tabs: { path: Route; label: string; icon: IconName }[] = [
+    { path: '/train', label: 'Train', icon: 'train' },
+    { path: '/timer', label: 'Timer', icon: 'timer' },
+    { path: '/cases', label: 'Cases', icon: 'cases' },
+    { path: '/stats', label: 'Stats', icon: 'stats' },
+    { path: '/settings', label: 'Settings', icon: 'settings' },
   ];
+
+  const hidden = $derived(solveInProgress());
 </script>
 
-<nav>
+<nav class:hidden inert={hidden}>
   {#each tabs as tab}
-    <button class:on={currentRoute() === tab.path} onclick={() => navigate(tab.path)}>
-      {tab.label}
+    <button
+      class:on={currentRoute() === tab.path}
+      aria-current={currentRoute() === tab.path ? 'page' : undefined}
+      onclick={() => navigate(tab.path)}
+    >
+      <Icon name={tab.icon} size={22} />
+      <span>{tab.label}</span>
     </button>
   {/each}
 </nav>
@@ -22,10 +32,14 @@
     position: fixed; inset: auto 0 0 0; height: calc(56px + env(safe-area-inset-bottom));
     padding-bottom: env(safe-area-inset-bottom);
     display: flex; background: var(--panel); border-top: 1px solid var(--line);
+    transition: transform var(--motion) var(--ease);
   }
+  nav.hidden { transform: translateY(100%); }
   button {
-    flex: 1; background: none; border: 0; color: var(--dim);
-    font: 500 12px var(--font-ui); cursor: pointer;
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    background: none; border: 0; color: var(--dim);
+    font: 500 var(--fs-label) var(--font-ui); letter-spacing: 0.02em; cursor: pointer;
   }
   button.on { color: var(--accent); }
+  button.on span { font-weight: 700; }
 </style>

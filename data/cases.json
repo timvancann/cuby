@@ -88,7 +88,7 @@
       "name": "Chameleon",
       "group": "oriented-edges",
       "primary": "(r U R' U') (r' F R F')",
-      "notes": "Sexy-move followed by sledge starting with r's instad of R's",
+      "notes": "Sexy-move followed by sledge starting with r's instead of R's",
       "easy": false,
       "pattern": "011111011100000001000",
       "oll": 24,
@@ -495,7 +495,7 @@
       "name": "Anti-Squeegee",
       "group": "knight-moves",
       "primary": "(r U r') (R U R' U') (r U' r')",
-      "notes": "Mirror of Squeegeeeee",
+      "notes": "Mirror of Squeegee",
       "easy": false,
       "pattern": "001111000110100010100",
       "oll": 16
@@ -549,7 +549,7 @@
       "group": "awkward-shapes",
       "primary": "r2 D' (r U r') D r2 (U' r' U' r)",
       "secondary": "y (R U R' U') (R U' R') (F' U' F) (R U R')",
-      "notes": "#1: verry fast if you nail the D-move #2: If you suck at D moves",
+      "notes": "#1: very fast if you nail the D-move #2: If you suck at D moves",
       "easy": false,
       "pattern": "101110010000110010001",
       "oll": 29
@@ -579,7 +579,7 @@
       "name": "Blank",
       "group": "dot-cases",
       "primary": "(R U2') (R2' F R F') U2' (R' F R F')",
-      "triggers": "(R U2' R') (Sledge) U2' (SLedge)",
+      "triggers": "(R U2' R') (Sledge) U2' (Sledge)",
       "easy": false,
       "pattern": "000010000010111010111",
       "oll": 1
@@ -617,7 +617,7 @@
     },
     {
       "id": "anti-nazi",
-      "name": "Anti-Nazi",
+      "name": "Anti-Pinwheel",
       "group": "dot-cases",
       "primary": "f (R U R' U') f' U' F (R U R' U') F'",
       "triggers": "f (sexy) f' U' (T)",
@@ -649,7 +649,7 @@
     },
     {
       "id": "nazi",
-      "name": "Nazi",
+      "name": "Pinwheel",
       "group": "dot-cases",
       "primary": "f (R U R' U') f' U F (R U R' U') F'",
       "triggers": "f (Sexy) f' U (T)",

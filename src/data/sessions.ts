@@ -1,6 +1,6 @@
 import { db, type Mode } from './db';
 
-const IDLE_MS = 30 * 60 * 1000;
+export const IDLE_MS = 30 * 60 * 1000;
 
 let active: { id: number; mode: Mode; config: string; lastActivityAt: number } | null = null;
 

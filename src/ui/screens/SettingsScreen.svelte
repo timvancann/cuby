@@ -1,9 +1,15 @@
 <script lang="ts">
+  import { slide } from 'svelte/transition';
   import { getSetting, setSetting, getPhaseSet, setPhaseSet } from '../../data/settings';
   import { parsePhaseLabels } from '../phaseSet';
   import { navigate } from '../router.svelte';
   import TriggerSheet from '../TriggerSheet.svelte';
   import PllDiagram from '../PllDiagram.svelte';
+  import Icon from '../Icon.svelte';
+  import { MOTION } from '../motion';
+  import { plural } from '../format';
+  import { resetDrillHistory } from '../drillState.svelte';
+  import { db } from '../../data/db';
   import { solvedCube, applyMoves } from '../../core/cube/model';
   import { parseAlg, invert } from '../../core/cube/parser';
   import { ringColors } from '../../core/cube/pattern';
@@ -15,23 +21,22 @@
   let usage = $state('');
   let phaseText = $state('');
   let phaseError = $state('');
-  let triggersOpen = $state(false);
-  let notationOpen = $state(false);
-  let pllOpen = $state(false);
+  let phaseMsg = $state('');
+  let open = $state<'triggers' | 'notation' | 'pll' | null>(null);
   let openTrigger = $state<{ name: string; moves: string } | null>(null);
 
   const NOTATION: { name: string; moves: string }[] = [
-    { name: 'R — right face, clockwise', moves: 'R' },
-    { name: "R' — prime: counterclockwise", moves: "R'" },
-    { name: 'R2 — half turn, 180°', moves: 'R2' },
-    { name: 'U D L F B — up, down, left, front, back', moves: 'U D L F B' },
-    { name: 'r — lowercase: two layers (wide)', moves: 'r' },
-    { name: 'M — middle slice, follows L', moves: 'M' },
-    { name: 'E — equator slice, follows D', moves: 'E' },
-    { name: 'S — standing slice, follows F', moves: 'S' },
-    { name: 'x — rotate whole cube, follows R', moves: 'x' },
-    { name: 'y — rotate whole cube, follows U', moves: 'y' },
-    { name: 'z — rotate whole cube, follows F', moves: 'z' },
+    { name: "R: right face, clockwise", moves: 'R' },
+    { name: "R': prime, counterclockwise", moves: "R'" },
+    { name: 'R2: half turn, 180°', moves: 'R2' },
+    { name: 'U D L F B: up, down, left, front, back', moves: 'U D L F B' },
+    { name: 'r: lowercase, two layers (wide)', moves: 'r' },
+    { name: 'M: middle slice, follows L', moves: 'M' },
+    { name: 'E: equator slice, follows D', moves: 'E' },
+    { name: 'S: standing slice, follows F', moves: 'S' },
+    { name: 'x: rotate whole cube, follows R', moves: 'x' },
+    { name: 'y: rotate whole cube, follows U', moves: 'y' },
+    { name: 'z: rotate whole cube, follows F', moves: 'z' },
   ];
 
   const TRIGGERS: { name: string; moves: string }[] = [
@@ -52,9 +57,9 @@
     { name: 'No headlights (Y perm)', moves: "F R U' R' U' R U R' F' R U R' U' R' F R F'",
       note: "F R U' R' U', R U R' F', then sexy + sledgehammer" },
     { name: 'Ua perm', moves: "R2 U' R' U' R U R U R U' R",
-      note: "R2 U' R' U', then R U R U R U' R" },
+      note: "solved bar in front. R2 U' R' U', then R U R U R U' R" },
     { name: 'Ub perm', moves: "R' U R' U' R' U' R' U R U R2",
-      note: "R' U R' U' R' U', then R' U R U R2 (inverse of Ua)" },
+      note: "solved bar in front. R' U R' U' R' U', then R' U R U R2 (inverse of Ua)" },
     { name: 'H perm', moves: "M2 U' M2 U2 M2 U' M2",
       note: "M2 around U', U2, U'" },
     { name: 'Z perm', moves: "M' U' M2 U' M2 U' M' U2 M2",
@@ -67,6 +72,7 @@
   function loadSettings() {
     getSetting('vibration', true).then(v => { vibration = v; });
     getSetting<boolean | null>('storagePersisted', null).then(p => { persisted = p; });
+    navigator.storage?.persisted?.().then(p => { if (p) persisted = true; });
     navigator.storage?.estimate?.().then(e => {
       if (e.usage != null) usage = `${(e.usage / 1024 / 1024).toFixed(1)} MB used`;
     });
@@ -78,6 +84,10 @@
     loadSettings();
   });
 
+  function toggle(section: 'triggers' | 'notation' | 'pll') {
+    open = open === section ? null : section;
+  }
+
   function toggleDryDisplay() {
     dryDisplay = dryDisplay === 'cube' ? 'diagram' : 'cube';
     void setSetting('dryDisplay', dryDisplay);
@@ -88,12 +98,19 @@
     void setSetting('vibration', vibration);
   }
 
+  async function requestPersist() {
+    if (!navigator.storage?.persist) return;
+    persisted = await navigator.storage.persist();
+    await setSetting('storagePersisted', persisted);
+  }
+
   function savePhases() {
     const parsed = parsePhaseLabels(phaseText);
+    phaseMsg = '';
     if ('error' in parsed) { phaseError = parsed.error; return; }
     phaseError = '';
     phaseText = parsed.labels.join(', ');
-    void setPhaseSet(parsed.labels);
+    void setPhaseSet(parsed.labels).then(() => { phaseMsg = 'saved'; });
   }
 
   let fileInput = $state<HTMLInputElement | null>(null);
@@ -101,22 +118,38 @@
   let importError = $state('');
   let importMsg = $state('');
   let pendingImport = $state.raw<BackupFile | null>(null);
-  let clearOpen = $state(false);
+  // Clear history asks twice (spec §5.2): 'ask' explains, 'final' is the point of no return.
+  let clearStep = $state<'closed' | 'ask' | 'final'>('closed');
+  let clearCount = $state(0);
   let clearMsg = $state('');
 
   async function doExport() {
     clearMsg = '';
     const backup = await exportAll(Date.now());
     const json = JSON.stringify(backup, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
     const date = new Date().toISOString().slice(0, 10);
+    const name = `cuby-export-${date}.json`;
+    const file = new File([json], name, { type: 'application/json' });
+    const done = `exported ${plural(backup.attempts.length, 'attempt')}`;
+    // The share sheet works in an installed iOS PWA, where a download link
+    // doesn't. If sharing is refused (e.g. the tap's user activation expired
+    // while the backup was read), fall back to the download below.
+    if (navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: 'cuby backup' });
+        exportMsg = done;
+        return;
+      } catch (e) {
+        if ((e as Error).name === 'AbortError') return; // you closed the share sheet
+      }
+    }
+    const url = URL.createObjectURL(file);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `cuby-export-${date}.json`;
+    a.download = name;
     a.click();
     URL.revokeObjectURL(url);
-    exportMsg = `exported ${backup.attempts.length} attempts`;
+    exportMsg = done;
   }
 
   function pickImportFile() {
@@ -153,138 +186,156 @@
   async function confirmImport() {
     if (!pendingImport) return;
     await importAll(pendingImport);
+    resetDrillHistory();
     importMsg = 'import complete';
     pendingImport = null;
     loadSettings();
   }
 
-  function cancelImport() {
-    pendingImport = null;
-  }
-
-  function openClearConfirm() {
+  async function openClearConfirm() {
     clearMsg = '';
-    clearOpen = true;
-  }
-
-  function cancelClear() {
-    clearOpen = false;
+    clearCount = await db.attempts.count();
+    clearStep = 'ask';
   }
 
   async function confirmClear() {
     await clearHistory();
-    clearOpen = false;
+    resetDrillHistory();
+    clearStep = 'closed';
     clearMsg = 'history cleared';
   }
 </script>
 
 <div class="screen">
-  <h1>Settings</h1>
+  <h1 class="h1">Settings</h1>
   <section>
     <button class="row" onclick={() => navigate('/cases')}>
-      <span>Case selection</span><span class="dim">choose on Cases tab</span>
+      <span>Case selection</span><span class="dim val">on the Cases tab <Icon name="next" size={16} /></span>
     </button>
-    <button class="row" onclick={toggleVibration}>
+    <button class="row" onclick={toggleVibration} role="switch" aria-checked={vibration}>
       <span>Vibration on tap</span><span class="dim">{vibration ? 'on' : 'off'}</span>
     </button>
     <button class="row" onclick={toggleDryDisplay}>
       <span>Dry practice display</span><span class="dim">{dryDisplay === 'cube' ? '3D cube' : 'diagram'}</span>
     </button>
-    <div class="row">
-      <span>Persistent storage</span>
-      <span class="dim">
-        {persisted === null ? 'not requested' : persisted ? 'granted' : 'denied'}{usage ? `, ${usage}` : ''}
-      </span>
-    </div>
   </section>
-  <h2 class="section-title">Reference</h2>
+
+  <h2 class="section-label title">Reference</h2>
   <section>
-    <button class="row" onclick={() => (triggersOpen = !triggersOpen)}>
-      <span>Common triggers</span><span class="dim">{triggersOpen ? 'hide' : 'show'}</span>
-    </button>
-    {#if triggersOpen}
-      {#each TRIGGERS as t}
-        <button class="row trigger" onclick={() => (openTrigger = t)}>
-          <span>{t.name}</span><span class="moves">{t.moves}</span>
-        </button>
-      {/each}
+    {#snippet disclosure(id: 'triggers' | 'notation' | 'pll', label: string)}
+      <button class="row" aria-expanded={open === id} onclick={() => toggle(id)}>
+        <span>{label}</span><span class="chev" class:open={open === id}><Icon name="chevron" size={18} /></span>
+      </button>
+    {/snippet}
+    {@render disclosure('triggers', 'Common triggers')}
+    {#if open === 'triggers'}
+      <div class="list" transition:slide={MOTION}>
+        {#each TRIGGERS as t}
+          <button class="row trigger" onclick={() => (openTrigger = t)}>
+            <span>{t.name}</span><span class="moves">{t.moves}</span>
+          </button>
+        {/each}
+      </div>
     {/if}
-    <button class="row" onclick={() => (notationOpen = !notationOpen)}>
-      <span>Cube notation</span><span class="dim">{notationOpen ? 'hide' : 'show'}</span>
-    </button>
-    {#if notationOpen}
-      {#each NOTATION as n}
-        <button class="row trigger" onclick={() => (openTrigger = n)}>
-          <span class="notation-name">{n.name}</span><span class="moves">{n.moves}</span>
-        </button>
-      {/each}
+    {@render disclosure('notation', 'Cube notation')}
+    {#if open === 'notation'}
+      <div class="list" transition:slide={MOTION}>
+        {#each NOTATION as n}
+          <button class="row trigger" onclick={() => (openTrigger = n)}>
+            <span class="notation-name">{n.name}</span><span class="moves">{n.moves}</span>
+          </button>
+        {/each}
+      </div>
     {/if}
-    <button class="row" onclick={() => (pllOpen = !pllOpen)}>
-      <span>2-look PLL</span><span class="dim">{pllOpen ? 'hide' : 'show'}</span>
-    </button>
-    {#if pllOpen}
-      {#each PLL as p}
-        <button class="row trigger pll" onclick={() => (openTrigger = p)}>
-          <PllDiagram ring={pllRing(p.moves)} size={64} />
-          <span class="pll-text">
-            <span>{p.name}</span>
-            <span class="moves">{p.moves}</span>
-            <span class="note">{p.note}</span>
-          </span>
-        </button>
-      {/each}
+    {@render disclosure('pll', '2-look PLL')}
+    {#if open === 'pll'}
+      <div class="list" transition:slide={MOTION}>
+        {#each PLL as p}
+          <button class="row trigger pll" onclick={() => (openTrigger = p)}>
+            <PllDiagram ring={pllRing(p.moves)} size={64} />
+            <span class="pll-text">
+              <span>{p.name}</span>
+              <span class="moves">{p.moves}</span>
+              <span class="note">{p.note}</span>
+            </span>
+          </button>
+        {/each}
+      </div>
     {/if}
   </section>
-  <h2 class="section-title">CFOP phases</h2>
+
+  <h2 class="section-label title">CFOP phases</h2>
   <section>
     <div class="row editor">
-      <input class="phase-input" bind:value={phaseText} spellcheck="false" />
+      <input class="phase-input" bind:value={phaseText} spellcheck="false" aria-label="CFOP phases, comma separated" />
       <button class="save" onclick={savePhases}>Save</button>
     </div>
     {#if phaseError}<p class="error">{phaseError}</p>{/if}
+    {#if phaseMsg}<p class="hint">{phaseMsg}</p>{/if}
   </section>
-  <h2 class="section-title">Data</h2>
+
+  <h2 class="section-label title">Data</h2>
   <section>
     <button class="row" onclick={doExport}>
-      <span>Export</span><span class="dim">download backup</span>
+      <span>Export</span><span class="dim val">save a backup file <Icon name="export" size={16} /></span>
     </button>
     {#if exportMsg}<p class="hint">{exportMsg}</p>{/if}
     <button class="row" onclick={pickImportFile}>
-      <span>Import</span><span class="dim">replace with backup file</span>
+      <span>Import</span><span class="dim val">replace with a backup <Icon name="import" size={16} /></span>
     </button>
     {#if importError}<p class="error">{importError}</p>{/if}
     {#if importMsg}<p class="hint">{importMsg}</p>{/if}
     {#if pendingImport}
-      <div class="row confirm">
-        <span>Replace ALL data with this file? ({pendingImport.attempts.length} attempts, exported {new Date(pendingImport.exportedAt).toISOString().slice(0, 10)})</span>
+      <div class="row confirm" transition:slide={MOTION}>
+        <span>Replace ALL data (history, algorithms, settings) with this file?
+          {plural(pendingImport.attempts.length, 'attempt')}, exported {new Date(pendingImport.exportedAt).toISOString().slice(0, 10)}.</span>
         <div class="actions">
-          <button class="btn" onclick={confirmImport}>Confirm</button>
-          <button class="btn" onclick={cancelImport}>Cancel</button>
+          <button class="btn" onclick={() => (pendingImport = null)}>Cancel</button>
+          <button class="btn" onclick={doExport}>Export current first</button>
+          <button class="btn bad" onclick={confirmImport}>Replace</button>
         </div>
       </div>
     {/if}
-    <input
-      type="file"
-      accept="application/json"
-      bind:this={fileInput}
-      onchange={onFileChosen}
-      class="hidden-input"
-    />
-    {#if !clearOpen}
-      <button class="row" onclick={openClearConfirm}>
-        <span>Clear history</span><span class="dim">delete sessions &amp; attempts</span>
-      </button>
-    {:else}
-      <div class="row confirm">
-        <span>Delete ALL sessions and attempts? Algorithms and settings survive.</span>
+    <input type="file" accept="application/json" bind:this={fileInput} onchange={onFileChosen} class="hidden-input" />
+    <button class="row" onclick={openClearConfirm} disabled={clearStep !== 'closed'}>
+      <span>Clear history</span><span class="dim">delete sessions and attempts</span>
+    </button>
+    {#if clearStep === 'ask'}
+      <div class="row confirm" transition:slide={MOTION}>
+        <span>Delete all {plural(clearCount, 'attempt')} and their sessions? Algorithms and settings stay.</span>
         <div class="actions">
+          <button class="btn" onclick={() => (clearStep = 'closed')}>Cancel</button>
           <button class="btn" onclick={doExport}>Export first</button>
-          <button class="btn bad" onclick={confirmClear}>Delete</button>
-          <button class="btn" onclick={cancelClear}>Cancel</button>
+          <button class="btn bad" onclick={() => (clearStep = 'final')}>Delete</button>
+        </div>
+      </div>
+    {:else if clearStep === 'final'}
+      <div class="row confirm" transition:slide={MOTION}>
+        <span><b>This can't be undone.</b> Are you sure?</span>
+        <div class="actions">
+          <button class="btn" onclick={() => (clearStep = 'closed')}>Keep my history</button>
+          <button class="btn bad" onclick={confirmClear}>Yes, delete everything</button>
         </div>
       </div>
     {/if}
     {#if clearMsg}<p class="hint">{clearMsg}</p>{/if}
+  </section>
+
+  <h2 class="section-label title">Storage</h2>
+  <section>
+    <div class="row static">
+      <span>Persistent storage</span>
+      <span class="dim">{persisted ? 'granted' : persisted === false ? 'not granted' : 'not requested'}{usage ? `, ${usage}` : ''}</span>
+    </div>
+    {#if !persisted}
+      <div class="row confirm">
+        <span class="dim small">Without it the browser may delete your history when the device runs low on space.
+          Installing cuby to the home screen usually gets it granted. Export a backup now and then either way.</span>
+        <div class="actions">
+          <button class="btn" onclick={requestPersist}>Ask again</button>
+        </div>
+      </div>
+    {/if}
   </section>
 </div>
 
@@ -293,41 +344,49 @@
 {/if}
 
 <style>
-  h1 { font-size: 20px; margin-bottom: 12px; }
-  h2.section-title { font-size: 16px; margin-top: 20px; margin-bottom: 8px; color: var(--dim); font-weight: 500; }
+  .h1 { margin-bottom: 16px; }
+  .title { margin: 24px 2px 8px; }
   section { display: grid; gap: 1px; background: var(--line); border-radius: var(--radius); overflow: hidden; }
+  .list { display: grid; gap: 1px; }
   .row {
-    display: flex; justify-content: space-between; align-items: center;
-    background: var(--panel); color: var(--text); border: 0; text-align: left;
-    font: 500 14px var(--font-ui); padding: 14px 14px; cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    min-height: 48px; background: var(--panel); color: var(--text); border: 0; text-align: left;
+    font: 500 var(--fs-body) var(--font-ui); padding: 10px 14px; cursor: pointer;
   }
-  .row.editor {
-    gap: 8px; cursor: auto; padding: 8px 8px;
-  }
-  .row.trigger { padding: 10px 14px; gap: 12px; }
-  .moves { font: 600 14px var(--font-mono); color: var(--accent); white-space: nowrap; }
-  .notation-name { font-size: 13px; }
-  .row.pll { justify-content: flex-start; align-items: center; gap: 12px; }
+  .row:disabled { cursor: default; color: var(--dim); }
+  .row.static { cursor: auto; }
+  .val { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-button); }
+  .chev { color: var(--dim); display: grid; transition: transform var(--motion) var(--ease); }
+  .chev.open { transform: rotate(180deg); }
+  .row.editor { gap: 8px; cursor: auto; padding: 8px; }
+  .row.trigger { background: var(--panel-2); min-height: var(--tap); padding: 8px 14px; }
+  .moves { font: 600 var(--fs-button) var(--font-mono); color: var(--accent); white-space: nowrap; }
+  .notation-name { font-size: var(--fs-button); }
+  .row.pll { justify-content: flex-start; gap: 12px; }
   .pll-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   .row.pll .moves { white-space: normal; }
-  .note { font: 12px var(--font-ui); color: var(--dim); }
+  .note { font: var(--fs-small)/1.35 var(--font-ui); color: var(--dim); }
+  .small { font-size: var(--fs-small); line-height: 1.4; }
   .phase-input {
-    flex: 1; font: 13px var(--font-mono); background: var(--bg); color: var(--text); border: 1px solid var(--line);
-    border-radius: 4px; padding: 8px 10px; outline: none;
+    flex: 1; min-width: 0; min-height: var(--tap); font: var(--fs-button) var(--font-mono);
+    background: var(--bg); color: var(--text); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 0 12px; outline: none;
   }
   .phase-input:focus { border-color: var(--accent); }
-  .save { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 4px; font: 500 13px var(--font-ui);
-    padding: 8px 14px; cursor: pointer; }
+  .save {
+    min-height: var(--tap); background: var(--accent); color: var(--accent-ink); border: 0; border-radius: var(--radius);
+    font: 700 var(--fs-button) var(--font-ui); padding: 0 18px; cursor: pointer;
+  }
   .save:active { opacity: 0.8; }
-  .error { background: var(--panel); color: var(--bad); font: 12px var(--font-ui); padding: 8px 14px; margin: 0;
-    border-top: 1px solid var(--line); }
-  .hint { background: var(--panel); color: var(--dim); font: 12px var(--font-ui); padding: 8px 14px; margin: 0;
-    border-top: 1px solid var(--line); }
+  .error { background: var(--panel); color: var(--bad); font: var(--fs-small) var(--font-ui); padding: 10px 14px; }
+  .hint { background: var(--panel); color: var(--dim); font: var(--fs-small) var(--font-ui); padding: 10px 14px; }
   .hidden-input { display: none; }
-  .row.confirm { flex-direction: column; align-items: stretch; gap: 10px; cursor: auto; }
-  .actions { display: flex; gap: 8px; justify-content: flex-end; }
-  .btn { background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 4px;
-    font: 500 13px var(--font-ui); padding: 8px 14px; cursor: pointer; }
+  .row.confirm { flex-direction: column; align-items: stretch; gap: 10px; cursor: auto; background: var(--panel-2); }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+  .btn {
+    min-height: var(--tap); background: var(--bg); color: var(--text); border: 1px solid var(--line);
+    border-radius: var(--radius); font: 500 var(--fs-button) var(--font-ui); padding: 0 14px; cursor: pointer;
+  }
   .btn:active { opacity: 0.8; }
-  .btn.bad { background: var(--bad); color: var(--accent-ink); border-color: var(--bad); }
+  .btn.bad { background: var(--bad); color: var(--accent-ink); border-color: var(--bad); font-weight: 700; }
 </style>

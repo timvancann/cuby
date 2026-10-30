@@ -1,8 +1,14 @@
 import type { Move } from '../../core/cube/model';
 
-// ---------- color scheme (yellow-top only) ----------
-// face order matches cubie material index: +x, -x, +y, -y, +z, -z
-const SCHEME = { px: 0xff8c00, nx: 0xd0021b, py: 0xffd500, ny: 0xf5f5f0, pz: 0x00a651, nz: 0x0051ba };
+// ---------- color schemes ----------
+// face order matches cubie material index: +x, -x, +y, -y, +z, -z. Both hold
+// green in front. Yellow-top is OLL practice; white-top is how WCA scrambles
+// are applied, so the Timer preview matches the cube in hand.
+const SCHEMES = {
+  'yellow-top': { px: 0xff8c00, nx: 0xd0021b, py: 0xffd500, ny: 0xf5f5f0, pz: 0x00a651, nz: 0x0051ba },
+  'white-top': { px: 0xd0021b, nx: 0xff8c00, py: 0xf5f5f0, ny: 0xffd500, pz: 0x00a651, nz: 0x0051ba },
+};
+export type Scheme = keyof typeof SCHEMES;
 const PLASTIC = 0x0c0d10;
 
 // ---------- visual move table ----------
@@ -52,6 +58,7 @@ export class CubeEngine {
   private playing = false;
   private busy = false;
   private rafId = 0;
+  private scheme = SCHEMES['yellow-top'];
   private destroyed = false;
   private resizeObserver: ResizeObserver;
 
@@ -70,7 +77,7 @@ export class CubeEngine {
     this.resizeObserver.observe(container);
   }
 
-  static async create(container: HTMLElement): Promise<CubeEngine> {
+  static async create(container: HTMLElement, scheme: Scheme = 'yellow-top'): Promise<CubeEngine> {
     const THREE = await import('three');
 
     const scene = new THREE.Scene();
@@ -97,6 +104,7 @@ export class CubeEngine {
     holder.add(pivot);
 
     const engine = new CubeEngine(container, THREE, scene, camera, renderer, holder, cubeRoot, pivot, []);
+    engine.scheme = SCHEMES[scheme];
     engine.buildCube();
     engine.resize();
     engine.wireDrag();
@@ -220,12 +228,12 @@ export class CubeEngine {
         for (let z = -1; z <= 1; z++) {
           if (x === 0 && y === 0 && z === 0) continue;
           const mats = [
-            faceMat(x === 1 ? SCHEME.px : null),
-            faceMat(x === -1 ? SCHEME.nx : null),
-            faceMat(y === 1 ? SCHEME.py : null),
-            faceMat(y === -1 ? SCHEME.ny : null),
-            faceMat(z === 1 ? SCHEME.pz : null),
-            faceMat(z === -1 ? SCHEME.nz : null),
+            faceMat(x === 1 ? this.scheme.px : null),
+            faceMat(x === -1 ? this.scheme.nx : null),
+            faceMat(y === 1 ? this.scheme.py : null),
+            faceMat(y === -1 ? this.scheme.ny : null),
+            faceMat(z === 1 ? this.scheme.pz : null),
+            faceMat(z === -1 ? this.scheme.nz : null),
           ];
           const cubie = new THREE.Mesh(geo, mats);
           cubie.position.set(x, y, z);

@@ -4,6 +4,8 @@ import { pools } from '../../data/caseSet';
 
 export type Stage = 'scrambled' | 'solving' | 'reveal';
 export const REVEAL_DEAD_MS = 300;
+// A stop tap this soon after the start is a double-tap, not a solve.
+export const MIN_SOLVE_MS = 300;
 export const PHASES = ['solve'] as const;
 
 export interface FlowState {
@@ -40,6 +42,7 @@ export function retryAttempt(s: FlowState): FlowState {
 
 export function tapZone(s: FlowState, selected: string[], rand: () => number, now: number): FlowState {
   if (s.stage === 'scrambled') return { ...s, stage: 'solving', timer: tap(s.timer, now) };
+  if (s.stage === 'solving' && now - s.timer.startedAt < MIN_SOLVE_MS) return s;
   if (s.stage === 'solving') return { ...s, stage: 'reveal', timer: tap(s.timer, now), revealAt: now };
   if (now - s.revealAt < REVEAL_DEAD_MS) return s;
   return newAttempt(s, selected, rand);

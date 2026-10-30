@@ -1,14 +1,16 @@
 <script lang="ts">
   import { parseAlg, invert } from '../../core/cube/parser';
   import type { Move } from '../../core/cube/model';
-  import { CubeEngine } from './engine';
+  import { CubeEngine, type Scheme } from './engine';
+  import Icon from '../Icon.svelte';
 
-  let { alg, setup, controls = true, onReady, size }: {
+  let { alg, setup, controls = true, onReady, size, scheme = 'yellow-top' }: {
     alg: string;
     setup?: string;
     controls?: boolean;
     onReady?: () => void;
     size?: number; // fixed pixel size; defaults to the responsive CSS size
+    scheme?: Scheme;
   } = $props();
 
   let container: HTMLDivElement;
@@ -26,7 +28,7 @@
         moves = parseAlg(alg);
         const setupMoves = setup ? invert(parseAlg(setup)) : [];
         error = '';
-        const e = await CubeEngine.create(container);
+        const e = await CubeEngine.create(container, scheme);
         if (cancelled) { e.destroy(); return; }
         engine = e;
         engine.load(moves, setupMoves);
@@ -88,11 +90,13 @@
       {/each}
     </div>
     <div class="transport">
-      <button class="btn" onclick={() => jumpTo(0)} title="Back to start">⏮</button>
-      <button class="btn" onclick={stepBack} title="Previous move">◀</button>
-      <button class="btn primary" onclick={togglePlay} title="Play / pause">{playing ? '⏸ Pause' : '▶ Play'}</button>
-      <button class="btn" onclick={stepForward} title="Next move">▶</button>
-      <button class="btn" onclick={() => jumpTo(moves.length)} title="Jump to end">⏭</button>
+      <button class="btn" onclick={() => jumpTo(0)} aria-label="back to start"><Icon name="first" /></button>
+      <button class="btn" onclick={stepBack} aria-label="previous move"><Icon name="prev" /></button>
+      <button class="btn primary" onclick={togglePlay} aria-label={playing ? 'pause' : 'play'}>
+        <Icon name={playing ? 'pause' : 'play'} />{playing ? 'Pause' : 'Play'}
+      </button>
+      <button class="btn" onclick={stepForward} aria-label="next move"><Icon name="next" /></button>
+      <button class="btn" onclick={() => jumpTo(moves.length)} aria-label="jump to end"><Icon name="last" /></button>
     </div>
   {/if}
 </div>
@@ -119,22 +123,24 @@
     align-items: center;
     justify-content: center;
     color: var(--dim);
-    font-size: 13px;
+    font-size: var(--fs-small);
   }
   .error {
     color: var(--bad);
-    font: 400 12px var(--font-mono);
+    font: 400 var(--fs-caption) var(--font-mono);
   }
   .tape {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 6px;
+    gap: 2px;
     max-width: 100%;
   }
   .tok {
     font: 600 16px var(--font-mono);
-    padding: 5px 9px;
+    min-width: var(--tap);
+    min-height: var(--tap);
+    padding: 0 8px;
     border-radius: 6px;
     border: 1px solid transparent;
     color: var(--dim);
@@ -152,11 +158,16 @@
     background: var(--panel-2);
     color: var(--text);
     border-radius: var(--radius);
-    font: 500 14px var(--font-ui);
-    padding: 9px 0;
-    text-align: center;
+    font: 500 var(--fs-button) var(--font-ui);
+    min-height: var(--tap);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
     cursor: pointer;
   }
+  .btn.primary { flex: 2; }
   .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
   .btn:hover { border-color: var(--dim); }
 </style>

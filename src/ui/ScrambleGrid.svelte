@@ -25,7 +25,7 @@
   .grid { display: grid; gap: 6px; }
   .row {
     /* font lives on the row so the 3ch column width is measured in the mono font */
-    font: 600 24px var(--font-mono);
+    font: 600 clamp(18px, 6.2vw, 24px) var(--font-mono); /* six columns still fit at 320px */
     display: grid;
     grid-template-columns: repeat(var(--cols), 3ch);
     justify-content: center;

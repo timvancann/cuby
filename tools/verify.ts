@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { solvedCube } from '../src/core/cube/model';
 import { applyAlg } from '../src/core/cube/parser';
 import { f2lSolved, normalizedOllPattern } from '../src/core/cube/pattern';
-import { caseState, enrichCases, FACE_TURN, type CasesDb } from './enrich';
+import { caseState, enrichCases, FACE_TURN, knownAlgCheck, MIN_HTM, type CasesDb } from './enrich';
 
 let failures = 0;
 const fail = (msg: string) => { failures++; console.error('FAIL:', msg); };
@@ -19,8 +19,9 @@ try {
   fail(`enrichment failed: ${(e as Error).message}`);
 }
 
-// 2. pools: every scramble face-turn-only, <=14 HTM, F2L-preserving, right case, unique
+// 2. pools: every scramble face-turn-only, 10..14 HTM, not a known alg, F2L-preserving, right case, unique
 const { pools } = JSON.parse(readFileSync('data/scrambles.json', 'utf8')) as { pools: Record<string, string[]> };
+const givesAway = knownAlgCheck(db);
 for (const c of db.cases) {
   const pool = pools[c.id] ?? [];
   const target = normalizedOllPattern(caseState(c.primary));
@@ -29,6 +30,8 @@ for (const c of db.cases) {
   for (const s of pool) {
     const moves = s.split(' ');
     if (moves.length > 14) fail(`${c.id}: scramble longer than 14 HTM: ${s}`);
+    if (moves.length < MIN_HTM) fail(`${c.id}: scramble shorter than ${MIN_HTM} HTM: ${s}`);
+    if (givesAway(s)) fail(`${c.id}: scramble is or contains a known OLL alg: ${s}`);
     if (!moves.every(m => FACE_TURN.test(m))) fail(`${c.id}: non-face-turn move in: ${s}`);
     if (/^U['2]?$/.test(moves[0]) || /^U['2]?$/.test(moves[moves.length - 1])) {
       fail(`${c.id}: scramble starts or ends with a U-layer turn: ${s}`);

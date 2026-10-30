@@ -7,6 +7,8 @@
   import CasesScreen from './ui/screens/CasesScreen.svelte';
   import StatsScreen from './ui/screens/StatsScreen.svelte';
   import SettingsScreen from './ui/screens/SettingsScreen.svelte';
+  import { fly } from 'svelte/transition';
+  import { MOTION } from './ui/motion';
 </script>
 
 {#if currentRoute() === '/train'}<TrainScreen />
@@ -17,23 +19,25 @@
 <TabBar />
 
 {#if pwa.needRefresh}
-  <button class="update-toast" onclick={() => pwa.reload()}>
-    Update available — tap to reload
+  <button class="update-toast" onclick={() => pwa.reload()} transition:fly={{ ...MOTION, y: 24 }}>
+    Update available, tap to reload
   </button>
 {/if}
 
 <style>
   .update-toast {
     position: fixed;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 0;
+    right: 0;
+    margin-inline: auto;
+    width: max-content;
     bottom: calc(68px + env(safe-area-inset-bottom));
     z-index: 30;
     background: var(--accent);
     color: var(--accent-ink);
     border: 0;
     border-radius: 999px;
-    font: 600 13px var(--font-ui, system-ui);
+    font: 600 var(--fs-small) var(--font-ui, system-ui);
     padding: 12px 20px;
     cursor: pointer;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);

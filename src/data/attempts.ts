@@ -1,4 +1,4 @@
-import { db, type Flag, type Mode } from './db';
+import { db, type AttemptRow, type Flag, type Mode } from './db';
 import { sessionForAttempt } from './sessions';
 import { splits, totalMs, type TimerState } from '../core/timer/attempt';
 
@@ -12,6 +12,7 @@ export async function recordAttempt(opts: {
   timer: TimerState;
   caseId?: string;
   scramble?: string;
+  retry?: boolean;
 }): Promise<number> {
   const sessionId = await sessionForAttempt(opts.mode, opts.config, opts.now);
   return (await db.attempts.add({
@@ -23,7 +24,12 @@ export async function recordAttempt(opts: {
     splits: splits(opts.timer),
     totalMs: totalMs(opts.timer),
     flag: 'ok',
+    ...(opts.retry ? { retry: true } : {}),
   })) as number;
+}
+
+export function attemptsForModes(modes: Mode[]): Promise<AttemptRow[]> {
+  return db.attempts.where('mode').anyOf(modes).sortBy('startedAt');
 }
 
 export function setAttemptFlag(id: number, flag: Flag): Promise<void> {

@@ -1,8 +1,14 @@
 import { expect, test } from 'vitest';
-import { aoN, bestAoN, lifetimeMean } from './wca';
+import { aoN, bestAoN, lifetimeMean, moN } from './wca';
 
 const t = (ms: number) => ({ totalMs: ms, dnf: false });
 const DNF = { totalMs: 0, dnf: true };
+
+test('mo3 is the untrimmed mean of the last three; any DNF makes it DNF', () => {
+  expect(moN([t(999), t(10), t(20), t(30)], 3)).toBe(20);
+  expect(moN([t(10), DNF, t(30)], 3)).toBe('dnf');
+  expect(moN([t(10), t(20)], 3)).toBeNull();
+});
 
 test('ao5 trims best and worst', () => {
   expect(aoN([t(10), t(20), t(30), t(40), t(1000)], 5)).toBe(30); // drops 10 and 1000

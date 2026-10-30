@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { DONE_DEAD_MS, abortTimer, newTimerAttempt, tapTimer } from './flow';
+import { DONE_DEAD_MS, MIN_PHASE_MS, abortTimer, newTimerAttempt, tapTimer } from './flow';
 import { splits, totalMs } from '../../core/timer/attempt';
 
 test('full-solve: two taps, then done with one split', () => {
@@ -24,6 +24,15 @@ test('cfop: intermediate taps mark phase boundaries', () => {
   s = tapTimer(s, 11500) as typeof s;
   expect(s.stage).toBe('done');
   expect(splits(s.timer).map(x => x.ms)).toEqual([2000, 6000, 2000, 1500]);
+});
+
+test('a tap within MIN_PHASE_MS of the previous tap is ignored', () => {
+  let s = newTimerAttempt(['Cross', 'F2L']);
+  s = tapTimer(s, 1000) as typeof s;
+  expect(tapTimer(s, 1000 + MIN_PHASE_MS - 1)).toBe(s);
+  s = tapTimer(s, 3000) as typeof s; // Cross done
+  expect(tapTimer(s, 3000 + MIN_PHASE_MS - 1)).toBe(s);
+  expect((tapTimer(s, 3000 + MIN_PHASE_MS) as typeof s).stage).toBe('done');
 });
 
 test('done ignores taps inside dead-time, returns next after it', () => {

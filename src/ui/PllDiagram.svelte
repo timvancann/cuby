@@ -3,7 +3,8 @@
   import { R, F, L, B } from '../core/cube/model';
   let { ring, size = 72 }: { ring: number[]; size?: number } = $props();
   const bars = $derived(pllDiagramLayout(ring));
-  const COLOR: Record<number, string> = { [R]: '#d0021b', [F]: '#00a651', [L]: '#ff8c00', [B]: '#0051ba' };
+  // Yellow top, green front: orange is on the right (matches the 3D engine).
+  const COLOR: Record<number, string> = { [R]: '#ff8c00', [F]: '#00a651', [L]: '#d0021b', [B]: '#0051ba' };
   const POS = [9, 35.5, 62];
 </script>
 

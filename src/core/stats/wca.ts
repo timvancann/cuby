@@ -30,6 +30,14 @@ export function bestAoN(results: TimedResult[], n: number): number | 'dnf' | nul
   return best;
 }
 
+// WCA mean of N (mo3): no trimming, any DNF makes it a DNF.
+export function moN(results: TimedResult[], n: number): number | 'dnf' | null {
+  if (results.length < n) return null;
+  const win = results.slice(-n);
+  if (win.some(r => r.dnf)) return 'dnf';
+  return win.reduce((sum, r) => sum + r.totalMs, 0) / n;
+}
+
 export function lifetimeMean(results: TimedResult[]): number | null {
   const ok = results.filter(r => !r.dnf);
   if (ok.length === 0) return null;
