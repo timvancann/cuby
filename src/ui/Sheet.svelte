@@ -47,10 +47,19 @@
   });
 
   $effect(() => drillKeys({ onSpace: () => {}, onEscape: requestClose }));
+
+  // Keyboard focus moves into the sheet when it opens and back to whatever
+  // opened it when it closes, so Tab doesn't wander the screen behind it.
+  let sheetEl: HTMLDivElement;
+  $effect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    sheetEl.focus({ preventScroll: true });
+    return () => opener?.focus({ preventScroll: true });
+  });
 </script>
 
 <button class="overlay" aria-label="close" onclick={requestClose} transition:fade|global={MOTION}></button>
-<div class="sheet" role="dialog" aria-modal="true" aria-label={title} transition:rise|global>
+<div class="sheet" role="dialog" aria-modal="true" aria-label={title} tabindex="-1" bind:this={sheetEl} transition:rise|global>
   <div class="head">
     <span class="grab" aria-hidden="true"></span>
     {#if title}<h2>{title}</h2>{/if}
@@ -72,6 +81,7 @@
     display: flex; flex-direction: column;
     background: var(--panel); border-top: 1px solid var(--line); border-radius: 14px 14px 0 0;
   }
+  .sheet:focus { outline: none; }
   .head {
     position: relative; flex: none; display: flex; align-items: center; justify-content: center;
     min-height: 52px; padding: 10px 56px 0;
@@ -94,4 +104,16 @@
   }
   /* Overflowing content scrolls; it never squashes (an SVG would collapse to 0). */
   .body > :global(*) { flex-shrink: 0; }
+
+  /* Desktop: a centred dialog, no drag handle. Keep in sync with DESKTOP_QUERY. */
+  @media (min-width: 900px) and (min-height: 600px) {
+    .sheet {
+      inset: 0; margin: auto; width: min(560px, calc(100vw - 48px)); height: fit-content;
+      border: 1px solid var(--line); border-radius: 14px;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+    }
+    .grab { display: none; }
+    .head { padding-top: 6px; }
+    .body { padding-bottom: 24px; }
+  }
 </style>

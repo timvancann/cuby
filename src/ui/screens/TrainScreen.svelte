@@ -299,4 +299,16 @@
     min-height: 48px; background: var(--accent); color: var(--accent-ink); border: 0; border-radius: var(--radius);
     font: 700 var(--fs-body) var(--font-ui); cursor: pointer;
   }
+  @media (hover: hover) {
+    .mode-card:hover { border-color: var(--dim); }
+  }
+
+  /* Desktop: the two mode cards side by side, and a bigger clock. */
+  @media (min-width: 900px) and (min-height: 600px) {
+    .train { max-width: 800px; }
+    .mode-col { grid-template-columns: 1fr 1fr; width: min(100%, 720px); }
+    .mode-col .h1 { grid-column: 1 / -1; }
+    .drill { width: 100%; max-width: 560px; justify-self: center; }
+    .clock { font-size: 96px; }
+  }
 </style>

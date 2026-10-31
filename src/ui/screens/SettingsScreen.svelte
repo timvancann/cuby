@@ -206,8 +206,10 @@
   }
 </script>
 
-<div class="screen">
+<div class="screen wide">
   <h1 class="h1">Settings</h1>
+  <div class="cols">
+  <div class="col">
   <section>
     <button class="row" onclick={() => navigate('/cases')}>
       <span>Case selection</span><span class="dim val">on the Cases tab <Icon name="next" size={16} /></span>
@@ -263,7 +265,9 @@
       </div>
     {/if}
   </section>
+  </div>
 
+  <div class="col">
   <h2 class="section-label title">CFOP phases</h2>
   <section>
     <div class="row editor">
@@ -337,6 +341,8 @@
       </div>
     {/if}
   </section>
+  </div>
+  </div>
 </div>
 
 {#if openTrigger}
@@ -389,4 +395,18 @@
   }
   .btn:active { opacity: 0.8; }
   .btn.bad { background: var(--bad); color: var(--accent-ink); border-color: var(--bad); font-weight: 700; }
+
+  /* The columns are invisible on phones: everything stacks as before. */
+  .cols, .col { display: contents; }
+  @media (hover: hover) {
+    .row:not(.static, .editor, .confirm, :disabled):hover { background: var(--panel-2); }
+    .row.trigger:hover { background: #2a2d35; }
+  }
+
+  /* Desktop: preferences and references left, phases and data right. */
+  @media (min-width: 900px) and (min-height: 600px) {
+    .cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; align-items: start; }
+    .col { display: block; }
+    .col > .title:first-child { margin-top: 0; }
+  }
 </style>

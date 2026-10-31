@@ -42,4 +42,7 @@
     cursor: pointer;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
   }
+  @media (min-width: 900px) and (min-height: 600px) {
+    .update-toast { left: var(--rail); bottom: 24px; }
+  }
 </style>

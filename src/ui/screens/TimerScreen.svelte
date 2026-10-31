@@ -287,4 +287,10 @@
     min-height: 48px; background: var(--accent); color: var(--accent-ink); border: 0; border-radius: var(--radius);
     font: 700 var(--fs-body) var(--font-ui); cursor: pointer;
   }
+
+  /* Desktop: the clock is read from arm's length. */
+  @media (min-width: 900px) and (min-height: 600px) {
+    .clock { font-size: 96px; }
+    .clock.idle { font-size: 64px; }
+  }
 </style>

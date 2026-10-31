@@ -62,6 +62,16 @@ body.sheet-open { overflow: hidden; }
   box-sizing: border-box;
 }
 .screen.center { display: flex; align-items: center; justify-content: center; }
+
+/* Desktop layout (keep in sync with DESKTOP_QUERY in src/ui/motion.ts): the tab
+   bar becomes a left rail, so screens lose the bottom padding that cleared it,
+   and list-like screens may use the width. Below it, nothing changes. */
+:root { --rail: 88px; }
+@media (min-width: 900px) and (min-height: 600px) {
+  body { padding-left: var(--rail); }
+  .screen { padding: 24px 32px; max-width: 624px; }
+  .screen.wide { max-width: 1120px; }
+}
 .dim { color: var(--dim); }
 
 /* Screen title, and the small uppercase label used for every section heading. */

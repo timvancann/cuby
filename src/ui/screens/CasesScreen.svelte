@@ -25,9 +25,9 @@
   const easyIds = cases.filter(c => c.easy).map(c => c.id);
 </script>
 
-<div class="screen">
+<div class="screen wide">
   <h1 class="h1">Cases <span class="dim count">{selected.length}/{cases.length} selected</span></h1>
-  <p class="hint dim">Tap a case to select it, hold it to see the algorithm.</p>
+  <p class="hint dim">Tap a case to see its algorithm, hold it to select it.</p>
   <div class="presets">
     <button class="chip" onclick={() => update(cases.map(c => c.id))}>Select all</button>
     <button class="chip" onclick={() => update(easyIds)}>Easy {easyIds.length}</button>
@@ -37,6 +37,7 @@
     <p class="warn" transition:slide={MOTION}>Pick at least 2 cases to train, there's nothing to recognize with one.</p>
   {/if}
   {#if loaded}
+    <div class="groups">
     {#each byGroup as group}
       {@const n = group.cases.filter(c => selected.includes(c.id)).length}
       <section>
@@ -52,9 +53,9 @@
             <button
               class="tile"
               class:on={selected.includes(c.id)}
-              aria-pressed={selected.includes(c.id)}
-              use:longpress={{ onLongPress: () => (peek = c) }}
-              onclick={() => update(toggleCase(selected, c.id))}
+              aria-label="{c.name} #{c.oll}{selected.includes(c.id) ? ', selected' : ''}"
+              use:longpress={{ onLongPress: () => update(toggleCase(selected, c.id)) }}
+              onclick={() => (peek = c)}
             >
               <CaseDiagram pattern={c.pattern} size={64} />
               <span class="name">{c.name}</span>
@@ -64,11 +65,14 @@
         </div>
       </section>
     {/each}
+    </div>
   {/if}
 </div>
 
 {#if peek}
-  <CaseSheet info={peek} onClose={() => (peek = null)} />
+  {@const id = peek.id}
+  <CaseSheet info={peek} onClose={() => (peek = null)}
+    selected={selected.includes(id)} onToggle={() => update(toggleCase(selected, id))} />
 {/if}
 
 <style>
@@ -107,4 +111,19 @@
   }
   .tile.on { border-color: var(--accent); }
   .name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @media (hover: hover) {
+    .tile:hover:not(.on) { border-color: var(--line); }
+    .group-header:hover .pill { border-color: var(--dim); }
+  }
+
+  /* Desktop: the groups flow into columns instead of one long list. */
+  @media (min-width: 900px) and (min-height: 600px) {
+    .hint, .presets, .warn { max-width: 560px; }
+    .groups { columns: 3 300px; column-gap: 32px; }
+    /* Each group sits in a faint card so the column boundaries read clearly. */
+    section {
+      break-inside: avoid; margin-bottom: 24px; padding: 4px 12px 12px;
+      background: #121316; border: 1px solid rgba(255, 255, 255, 0.04); border-radius: 12px;
+    }
+  }
 </style>

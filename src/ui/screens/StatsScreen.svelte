@@ -148,7 +148,7 @@
   const emptyRoute = $derived(view === 'case' || view === 'dry' ? '/train' : '/timer');
 </script>
 
-<div class="screen stats">
+<div class="screen wide stats">
   <h1 class="h1">Stats</h1>
   <div class="mode-select-wrap">
     <SegmentedControl
@@ -171,7 +171,8 @@
       <button class="link" onclick={() => navigate(emptyRoute)}>Go train</button>
     </div>
   {:else if loaded}
-    <section>
+    <div class="board" class:with-cases={view === 'case' || view === 'dry'}>
+    <section class="avg-s">
       <h2 class="section-label">Averages</h2>
       <div class="table avg">
         <div class="row head"><span></span><span class="num">current</span><span class="num">best</span></div>
@@ -191,7 +192,7 @@
     </section>
 
     {#if view === 'cfop' && phaseRows.length}
-      <section transition:slide={MOTION}>
+      <section class="phase-s" transition:slide={MOTION}>
         <h2 class="section-label">Per phase</h2>
         <div class="table phase">
           <div class="row head"><span>phase</span><span class="num">mean</span><span class="num">ao5</span><span class="num">ao12</span><span class="num">best</span></div>
@@ -209,7 +210,7 @@
     {/if}
 
     {#if view === 'case' || view === 'dry'}
-      <section transition:slide={MOTION}>
+      <section class="cases-s" transition:slide={MOTION}>
         <h2 class="section-label">Per case</h2>
         <p class="dim note">{timeLabel}: mean of your last 5 clean attempts, all-time mean underneath.</p>
         <div class="table cases" class:dry={view === 'dry'}>
@@ -247,12 +248,12 @@
       </section>
     {/if}
 
-    <section>
+    <section class="trend-s">
       <h2 class="section-label">Session trend</h2>
       <SessionTrend points={trendPoints} />
     </section>
 
-    <section>
+    <section class="sessions-s">
       <h2 class="section-label">Sessions</h2>
       <p class="dim note">Tap an attempt to change its flag.</p>
       <div class="sessions">
@@ -281,6 +282,7 @@
         {/each}
       </div>
     </section>
+    </div>
   {/if}
 </div>
 
@@ -373,4 +375,26 @@
     color: var(--dim); font: 500 var(--fs-button) var(--font-ui); cursor: pointer;
   }
   .flags button.on { color: var(--accent); border-color: var(--accent); font-weight: 600; }
+
+  /* The board is invisible on phones: its sections stack as before. */
+  .board { display: contents; }
+  @media (hover: hover) {
+    .session-row:hover, .attempt-row:hover { background: var(--panel); }
+  }
+
+  /* Desktop: two columns. With a per-case table it gets the right column to
+     itself; otherwise averages sit left and the session history right. The
+     trailing 1fr row soaks up the tall column's extra height so the short
+     column's sections don't spread apart. */
+  @media (min-width: 900px) and (min-height: 600px) {
+    .mode-select-wrap { max-width: 560px; }
+    .board { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto auto auto 1fr; column-gap: 40px; align-items: start; }
+    .avg-s { grid-area: 1 / 1; }
+    .phase-s { grid-area: 2 / 1; }
+    .trend-s { grid-area: 1 / 2; }
+    .sessions-s { grid-area: 2 / 2 / -1; }
+    .with-cases .trend-s { grid-area: 2 / 1; }
+    .with-cases .sessions-s { grid-area: 3 / 1 / -1; }
+    .cases-s { grid-area: 1 / 2 / -1; }
+  }
 </style>

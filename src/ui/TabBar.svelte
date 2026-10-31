@@ -42,4 +42,17 @@
   }
   button.on { color: var(--accent); }
   button.on span { font-weight: 700; }
+
+  /* Desktop: a rail down the left edge. Keep in sync with DESKTOP_QUERY. */
+  @media (min-width: 900px) and (min-height: 600px) {
+    nav {
+      inset: 0 auto 0 0; width: var(--rail); height: auto; padding: 16px 8px;
+      flex-direction: column; gap: 4px;
+      border-top: 0; border-right: 1px solid var(--line);
+    }
+    nav.hidden { transform: translateX(-100%); }
+    button { flex: none; height: 64px; border-radius: var(--radius); gap: 4px; }
+    button:hover { color: var(--text); background: var(--panel-2); }
+    button.on, button.on:hover { color: var(--accent); background: var(--panel-2); }
+  }
 </style>

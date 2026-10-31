@@ -26,12 +26,14 @@ export function longpress(node: HTMLElement, opts: LongPressOptions) {
   const move = (e: PointerEvent) => {
     if (Math.hypot(e.clientX - startX, e.clientY - startY) > 10) cancel();
   };
-  const click = (e: Event) => {
-    if (fired) {
+  const click = (e: MouseEvent) => {
+    // detail 0 is a keyboard activation: never the click that ends a hold,
+    // even when the hold was released off the element and left `fired` set.
+    if (fired && e.detail !== 0) {
       e.stopPropagation();
       e.preventDefault();
-      fired = false;
     }
+    fired = false;
   };
   const contextmenu = (e: Event) => e.preventDefault(); // mobile long-press menu
 

@@ -9,7 +9,12 @@
   import { activeAlg } from '../data/settings';
   import { getOverride, setOverride, clearOverride } from '../data/overrides';
 
-  let { info, onClose }: { info: CaseInfo; onClose: () => void } = $props();
+  let { info, onClose, selected, onToggle }: {
+    info: CaseInfo;
+    onClose: () => void;
+    selected?: boolean;
+    onToggle?: () => void; // shows a select/deselect button next to Edit
+  } = $props();
   let alg = $state('');
   let hasOverride = $state(false);
   let editing = $state(false);
@@ -77,7 +82,14 @@
   {#if info.notes}<p class="dim small">{info.notes}</p>{/if}
 
   {#if !editing}
-    <button class="btn edit" onclick={startEdit}>Edit algorithm</button>
+    <div class="actions">
+      <button class="btn edit" onclick={startEdit}>Edit algorithm</button>
+      {#if onToggle}
+        <button class="btn edit" class:on={selected} aria-pressed={selected} onclick={onToggle}>
+          {selected ? 'Selected' : 'Select'}
+        </button>
+      {/if}
+    </div>
   {:else}
     <div class="editor" transition:slide={MOTION}>
       <textarea class="draft" bind:value={draft} rows="2" spellcheck="false" aria-label="algorithm"></textarea>
@@ -114,7 +126,9 @@
     border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
     border-radius: var(--radius); font: 500 var(--fs-button) var(--font-ui); cursor: pointer;
   }
-  .btn.edit { flex: none; margin-top: 4px; }
+  .actions { display: flex; gap: 8px; margin-top: 4px; }
+  .btn.edit { flex: none; }
+  .btn.on { color: var(--accent); border-color: var(--accent); font-weight: 600; }
   .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
   .btn:hover { border-color: var(--dim); }
 </style>
